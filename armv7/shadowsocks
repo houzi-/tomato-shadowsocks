@@ -73,7 +73,7 @@ case ${1} in
 			cd $PREFIX;mkdir -p opt;mkdir -p shadowsocks;cd /;cd /tmp/home/root
 			cp /tmp/shadowsocks $PREFIX/shadowsocks
 			mount -o bind $PREFIX/opt /opt
-			cd /opt && wget -O - http://entware.wl500g.info/binaries/entware/installer/entware_install.sh | sh
+			cd /opt && wget -O - http://pkg.entware.net/binaries/armv7/installer/Entware.sh | sh
 			cd /tmp && opkg install china* pdnsd* pcap* reso* shadow* diff*	
 			echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
 			sleep 5
