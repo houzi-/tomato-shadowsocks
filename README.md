@@ -1,4 +1,4 @@
-# tomato-shadowsocks
+tomato-shadowsocks
 Copyright (C) 2015 Jason Lin <wojiaolinmu008@gmail.com> 
 Last edited: 2016.2.1
 Version: V4.9 (ARM final version)
