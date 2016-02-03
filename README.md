@@ -15,3 +15,4 @@ See /LICENSE for more information.
 
 # Installation
 **See my [blog](http://www.router008.com/2016/02/03/Tomato-ShadowSocks/)**
+change bolg url
