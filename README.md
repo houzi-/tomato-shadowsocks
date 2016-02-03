@@ -14,5 +14,9 @@ This is free software, licensed under the GNU General Public License v3.
 See /LICENSE for more information.
 
 # Installation
+<<<<<<< HEAD
 **See my [blog](http://www.router008.com/2016/02/03/Tomato-ShadowSocks/)**
 change bolg url
+=======
+**See my [blog](http://www.router008.com/tomato-shibby-shadowssocks.html)**
+>>>>>>> 6ae133e6ca7caca34c17d8fb20bb5312a4fa4ba6
