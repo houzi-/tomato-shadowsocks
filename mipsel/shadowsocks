@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Copyright (C) 2015 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.2.1
+# Last edited: 2016.2.5
 # Version: V4.9 (MIPS final version)
 # Explain: This script can be used only for shibby Tomato MIPS firmware.
 # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
@@ -110,6 +110,7 @@ case ${1} in
 		echo -e -n $SHADOWSOCKS
 		sleep 1
 		echo -e "$ansi_red ERROR. $ansi_std"
+		rm -rf PREFIX/*
 		echo -e $WARNING $BOLD"Please install the SHADOWSOCKS script."$NORM 
 		exit 0		
 	fi
@@ -118,6 +119,7 @@ case ${1} in
 		echo -e -n $MOUNT
 		sleep 1
 		echo -e "$ansi_red ERROR. $ansi_std"
+		rm -rf PREFIX/*
 		echo -e $WARNING $BOLD"OPT directory does not mount."$NORM 
 		exit 0
 	else
@@ -141,6 +143,7 @@ case ${1} in
 			sleep 1
 			echo -e "$ansi_red ERROR. $ansi_std"
 			echo -e "$WARNING \n$BOLD Please install the following software:"$NORM
+			rm -rf PREFIX/*
 			echo -e $ansi_white"shadowsocks-libev \nchinadns \npdnsd \npcap-dnsproxy \nresolvip \ndiffutils"$ansi_std
 			exit 0
 		else	
@@ -148,6 +151,7 @@ case ${1} in
 			sleep 1
 			echo -e "$ansi_red ERROR. $ansi_std"
 			echo -e "$WARNING \n$BOLD Please install the following software:"$NORM
+			rm -rf PREFIX/*
 			cat /var/log/diff_show.txt			 
 			exit 0
 		fi
