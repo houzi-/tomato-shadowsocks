@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Copyright (C) 2015 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.2.5
+# Last edited: 2016.2.13
 # Version: V4.9 (ARM final version)
 # Explain: This script can be used only for shibby Tomato ARM firmware.
 # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
@@ -668,12 +668,10 @@ uptest= none;
 "global" )
 	IPSET=$(ipset -L | grep "1.0.1.0/24" | grep -v "grep")
 	if [ -z "$IPSET" ]; then
-		echo -e -n "$ansi_white Starting ignore... "
 		rm -f $PREFIX/shadowsocks/flush.lock
 		$PREFIX/shadowsocks/shadowsocks flush
 		$PREFIX/shadowsocks/shadowsocks rules
 	else	
-		echo -e -n "$ansi_white Starting global... "
 		LAN=$PREFIX/shadowsocks/lan.list
 		sed -n '1,16p' $PREFIX/shadowsocks/ignore.list > $PREFIX/shadowsocks/lan.list
 	
@@ -687,6 +685,7 @@ uptest= none;
 		safelist=$PREFIX/shadowsocks/safe.list
 		sed -e "s/^/-A ss_spec_lan_ac &/g" -e "1 i\-N ss_spec_lan_ac hash:net " $safelist | ipset -R -!
 	fi
+	echo -e -n "$ansi_white Starting ignore... "
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"		
 	;;
@@ -778,13 +777,13 @@ uptest= none;
 	wget -q -t0 -O- 'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | grep ipv4 | grep CN | awk -F\| '{ printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > $PREFIX/shadowsocks/ignore_tmp.txt
 
 	if [ -f "/var/log/pcap_dnsproxy.lock" ]; then	
-		cd $PREFIX/shadowsocks/dnsmasq.d/;curl -s --insecure -O https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf
+		cd $PREFIX/shadowsocks/dnsmasq.d/;curl -s --insecure -O https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf;cd /
 		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
 		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
 		sed -i "s|^\(server.*\)/[^/]*$|\1/$DNS|" $PREFIX/shadowsocks/dnsmasq.d/accelerated-domains.china.conf
 	else
 		wget -q -t0 -O- 'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > /opt/etc/chnroute.txt
-		cd $PREFIX/shadowsocks/dnsmasq.d/;curl -s --insecure -O https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf
+		cd $PREFIX/shadowsocks/dnsmasq.d/;curl -s --insecure -O https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf;cd /
 		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
 		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
 		sed -i "s|^\(server.*\)/[^/]*$|\1/$DNS|" $PREFIX/shadowsocks/dnsmasq.d/accelerated-domains.china.conf
@@ -820,10 +819,10 @@ uptest= none;
 	wget -q -t0 -O $PREFIX/shadowsocks/dnsmasq.d/gfwlist.conf https://raw.githubusercontent.com/koolshare/koolshare.github.io/master/maintain_files/gfwlist.conf
 		
 	sed -i "s|^\(server.*\)/[^/]*$|\1/$DNS|" $PREFIX/shadowsocks/dnsmasq.d/gfwlist.conf
-	sed -i "s|^\(ipset.*\)/[^/]*$|\1/gfw_black_list|" $PREFIX/shadowsocks/dnsmasq.d/gfwlist.conf	
-	service dnsmasq restart
+	sed -i "s|^\(ipset.*\)/[^/]*$|\1/gfw_black_list|" $PREFIX/shadowsocks/dnsmasq.d/gfwlist.conf
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"
+	service dnsmasq restart
 	;;
 	
 "check" )
