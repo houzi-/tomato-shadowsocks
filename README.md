@@ -14,6 +14,7 @@ This is free software, licensed under the GNU General Public License v3.
 See /LICENSE for more information.
 
 # Usage wiki
+**See my [Tomato-shadowsocks Scripting Guide](http://www.router008.com/2016/02/14/Tomato-shadowsocks-Scripting-Guide/)**
 
 # Installation
-**See my [blog](http://www.router008.com/2016/02/03/Tomato-ShadowSocks/)**
+**See my [Tomato-ShadowSocks(armv7+mipsel)](http://www.router008.com/2016/02/03/Tomato-ShadowSocks/)**
