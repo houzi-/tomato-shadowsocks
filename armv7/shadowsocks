@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Copyright (C) 2015 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.2.13
+# Last edited: 2016.2.16
 # Version: V4.9 (ARM final version)
 # Explain: This script can be used only for shibby Tomato ARM firmware.
 # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
@@ -255,6 +255,26 @@ Your Choice:"
 		$PREFIX/shadowsocks/shadowsocks rules
 		$PREFIX/shadowsocks/shadowsocks update_gfwlist
 
+		echo -e $INFO Configuring ntp server...
+		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
+		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
+		NTP=$PREFIX/shadowsocks/dnsmasq.d/ntp_server.conf
+		echo "server=/0.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/1.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/2.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/3.asia.pool.ntp.org/$DNS" >> $NTP
+		echo >> $NTP
+		rm -f $PREFIX/shadowsocks/dns.list
+
+		nvram set tm_dst="1"
+		nvram set tm_sel="UTC-8"
+		nvram set tm_tz="UTC-8"
+		nvram set ntp_kiss=""
+		nvram set ntp_kiss_ignore=""
+		nvram set ntp_server="0.asia.pool.ntp.org 1.asia.pool.ntp.org 2.asia.pool.ntp.org"
+		nvram set ntp_tdod="0"
+		nvram set ntp_updates="1"		
+		
 		echo -e $INFO Configuring dnsmasq_custom...
 		nvram set dnsmasq_custom="conf-dir=$PREFIX/shadowsocks/dnsmasq.d"
 		nvram set dnsmasq_q="0"
@@ -288,9 +308,6 @@ uptest= none;
 		end
 		
 		$PREFIX/shadowsocks/shadowsocks run
-		touch /var/log/shadowsocks.lock
-		touch /var/log/pdnsd.lock
-
 		
 		echo -e $INFO Configuring turn startup items and guard the capital...
 		echo -e "$PREFIX/opt/etc/init.d/auto.run" > /var/log/scr_c.txt
@@ -360,11 +377,27 @@ uptest= none;
 		$PREFIX/shadowsocks/shadowsocks ipset
 		sleep 2
 		$PREFIX/shadowsocks/shadowsocks rules
-			
-		touch /var/log/pdnsd.lock
-		touch /var/log/chinadns.lock
-		touch /var/log/shadowsocks.lock
 
+		echo -e $INFO Configuring ntp server...
+		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
+		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
+		NTP=$PREFIX/shadowsocks/dnsmasq.d/ntp_server.conf
+		echo "server=/0.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/1.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/2.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/3.asia.pool.ntp.org/$DNS" >> $NTP
+		echo >> $NTP
+		rm -f $PREFIX/shadowsocks/dns.list
+
+		nvram set tm_dst="1"
+		nvram set tm_sel="UTC-8"
+		nvram set tm_tz="UTC-8"
+		nvram set ntp_kiss=""
+		nvram set ntp_kiss_ignore=""
+		nvram set ntp_server="0.asia.pool.ntp.org 1.asia.pool.ntp.org 2.asia.pool.ntp.org"
+		nvram set ntp_tdod="0"
+		nvram set ntp_updates="1"		
+		
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
 		echo -e "no-resolv \nno-poll \ndomain-needed \nno-negcache \nserver=127.0.0.1#5353 \ncache-size=10000 \nconf-dir=$PREFIX/shadowsocks/dnsmasq.d" > /var/log/dnsmasq_custom.txt
@@ -418,12 +451,30 @@ uptest= none;
 		$PREFIX/shadowsocks/shadowsocks ipset
 		sleep 2
 		$PREFIX/shadowsocks/shadowsocks rules
-			
-		touch /var/log/shadowsocks.lock
 
+		echo -e $INFO Configuring ntp server...
+		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
+		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
+		NTP=$PREFIX/shadowsocks/dnsmasq.d/ntp_server.conf
+		echo "server=/0.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/1.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/2.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/3.asia.pool.ntp.org/$DNS" >> $NTP
+		echo >> $NTP
+		rm -f $PREFIX/shadowsocks/dns.list
+
+		nvram set tm_dst="1"
+		nvram set tm_sel="UTC-8"
+		nvram set tm_tz="UTC-8"
+		nvram set ntp_kiss=""
+		nvram set ntp_kiss_ignore=""
+		nvram set ntp_server="0.asia.pool.ntp.org 1.asia.pool.ntp.org 2.asia.pool.ntp.org"
+		nvram set ntp_tdod="0"
+		nvram set ntp_updates="1"		
+		
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
-		echo -e "no-resolv \nno-poll \ndomain-needed \nno-negcache \nserver=127.0.0.1#5353 \nall-servers \ncache-size=10000" > /var/log/dnsmasq_custom.txt
+		echo -e "no-resolv \nno-poll \ndomain-needed \nno-negcache \nserver=127.0.0.1#5353 \nall-servers \ncache-size=10000 \nconf-dir=$PREFIX/shadowsocks/dnsmasq.d" > /var/log/dnsmasq_custom.txt
 		DNS_CUSTOM=`sed -e '' /var/log/dnsmasq_custom.txt`
 		nvram set dnsmasq_custom="$DNS_CUSTOM"
 		nvram set dnsmasq_q="0"
@@ -480,9 +531,26 @@ uptest= none;
 		sleep 2
 		$PREFIX/shadowsocks/shadowsocks rules
 
-		touch /var/log/chinadns.lock
-		touch /var/log/shadowsocks.lock
+		echo -e $INFO Configuring ntp server...
+		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
+		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
+		NTP=$PREFIX/shadowsocks/dnsmasq.d/ntp_server.conf
+		echo "server=/0.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/1.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/2.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/3.asia.pool.ntp.org/$DNS" >> $NTP
+		echo >> $NTP
+		rm -f $PREFIX/shadowsocks/dns.list
 
+		nvram set tm_dst="1"
+		nvram set tm_sel="UTC-8"
+		nvram set tm_tz="UTC-8"
+		nvram set ntp_kiss=""
+		nvram set ntp_kiss_ignore=""
+		nvram set ntp_server="0.asia.pool.ntp.org 1.asia.pool.ntp.org 2.asia.pool.ntp.org"
+		nvram set ntp_tdod="0"
+		nvram set ntp_updates="1"		
+		
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
 		echo -e "no-resolv \nno-poll \ndomain-needed \nno-negcache \nserver=127.0.0.1#5353 \ncache-size=10000 \nconf-dir=$PREFIX/shadowsocks/dnsmasq.d" > /var/log/dnsmasq_custom.txt
