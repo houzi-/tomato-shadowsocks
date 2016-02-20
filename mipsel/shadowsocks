@@ -1,8 +1,8 @@
 #!/bin/sh
 #
-# Copyright (C) 2015 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.2.16
-# Version: V4.9 (MIPS final version)
+# Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> 
+# Last edited: 2016.2.21
+# Version: V4.9-1 (MIPS final version)
 # Explain: This script can be used only for shibby Tomato MIPS firmware.
 # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
 # Description: This is a science on ShadowSocks Internet automatic configuration script in Tomato under.
@@ -53,6 +53,9 @@ START_SCRIPT="$ansi_white START_SCRIPT: "
 
 # You can mount the partition path editing (EP:"/jffs" or "/tmp/mnt/sdb1" )
 PREFIX=/jffs
+
+# Time
+DATE=$(date "+%Y-%m-%d %H:%M:%S")
 
 case ${1} in
 
@@ -353,7 +356,7 @@ uptest= none;
 }
 		end
 
-		touch $PREFIX/shadowsocks/update_chnroutes.lock
+		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
 		$PREFIX/shadowsocks/shadowsocks run
 		sleep 4
@@ -410,7 +413,7 @@ uptest= none;
 		service scheduler save
 		service scheduler restart
 
-		rm -f $PREFIX/shadowsocks/update_chnroutes.lock
+		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
 		killall shadowsocks > /dev/null
 	elif [ $programs == "3" ];then
@@ -426,7 +429,7 @@ uptest= none;
 #		sleep 1
 #		sed 's/#\(iptables -t nat -A PREROUTING $PRE2\)/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 			
-		touch $PREFIX/shadowsocks/update_chnroutes.lock
+		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
 		touch /var/log/pcap_dnsproxy.lock		
 		$PREFIX/shadowsocks/shadowsocks run
@@ -484,7 +487,7 @@ uptest= none;
 		service scheduler save
 		service scheduler restart
 
-		rm -f $PREFIX/shadowsocks/update_chnroutes.lock
+		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
 		killall shadowsocks > /dev/null
 	elif [ $programs == "4" ];then
@@ -506,7 +509,7 @@ uptest= none;
 		rm -f /opt/etc/init.d/S24cn
 		chmod +x /opt/etc/init.d/S2*
 			
-		touch $PREFIX/shadowsocks/update_chnroutes.lock
+		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
 		$PREFIX/shadowsocks/shadowsocks run
 		sleep 4
@@ -563,7 +566,7 @@ uptest= none;
 		service scheduler save
 		service scheduler restart
 			
-		rm -f $PREFIX/shadowsocks/update_chnroutes.lock
+		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
 		killall shadowsocks > /dev/null
 	fi
@@ -574,9 +577,9 @@ uptest= none;
 	sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks.json  > /var/log/server.txt
 
 	if [ -f "$PREFIX/shadowsocks/chnroutes.lock" ]; then
-		$PREFIX/shadowsocks/shadowsocks update_chnroutes
+		$PREFIX/shadowsocks/shadowsocks update
 	else
-		echo "$(date): Has loaded China route table" > /var/log/chnroutes.log
+		echo '['$DATE'] Has loaded China route table.' > /var/log/chnroutes.log
 	fi
 
 	PROCESS=$(ps | grep "ss-redir" | grep -v "grep")
@@ -751,8 +754,7 @@ uptest= none;
 	echo -e "            $ansi_green done. $ansi_std"
 	;;
 
-"update_chnroutes" )
-	echo -e -n "$ansi_white Updating chnroutes... "
+"update" )
 	directory=$(cd $PREFIX/shadowsocks && ls | grep "dnsmasq.d" | grep -v "grep")
 	if [ -z "$directory" ]; then
 		cd $PREFIX/shadowsocks && mkdir dnsmasq.d
@@ -793,10 +795,56 @@ uptest= none;
 	wget -q -t0 -O- 'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > $PREFIX/shadowsocks/ignore_tmp.txt
 	
 	if [ -f "/var/log/pcap_dnsproxy.lock" ]; then
-		cd $PREFIX/shadowsocks/dnsmasq.d/;curl -s --insecure -O https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf;cd /
-		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
-		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
-		sed -i "s|^\(server.*\)/[^/]*$|\1/$DNS|" $PREFIX/shadowsocks/dnsmasq.d/accelerated-domains.china.conf
+		rm -f /opt/etc/pcap_dnsproxy/Routing.txt /opt/etc/pcap_dnsproxy/WhiteList.txt
+
+		# Update Local Hosts
+		cd /tmp;curl -s --insecure -O https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf
+		echo -e '[Local Hosts]' >> /tmp/WhiteList.txt
+		echo -e '## China mainland domains' >> /tmp/WhiteList.txt
+		echo -e '## Get the latest database: https://github.com/xinhugo/Free-List/blob/master/WhiteList.txt' >> /tmp/WhiteList.txt
+		echo -e '## Report an issue: https://github.com/xinhugo/Free-List/issues' >> /tmp/WhiteList.txt
+		echo -e "## Last update: $DATE\n" >> /tmp/WhiteList.txt
+		sed 's|/114.114.114.114$||' /tmp/accelerated-domains.china.conf > /tmp/WhiteList_tmp.txt
+		sed -i 's|\(\.\)|\\\1|g' /tmp/WhiteList_tmp.txt
+		sed -i 's|server=/|.*\\\b|' /tmp/WhiteList_tmp.txt
+		sed -i 's|b\(cn\)$|\.\1|' /tmp/WhiteList_tmp.txt
+		cat /tmp/WhiteList_tmp.txt >> /tmp/WhiteList.txt
+
+		cd /tmp;curl -s --insecure -O https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/google.china.conf
+		sed 's|/114.114.114.114$||' /tmp/google.china.conf > /tmp/WhiteList_tmp.txt
+		sed -i 's|\(\.\)|\\\1|g' /tmp/WhiteList_tmp.txt
+		sed -i 's|server=/|.*\\\b|' /tmp/WhiteList_tmp.txt
+		cat /tmp/WhiteList_tmp.txt >> /tmp/WhiteList.txt
+		echo -e -n "$ansi_white Updating Local Hosts... "
+		sleep 1
+		echo -e "            $ansi_green done. $ansi_std"
+
+		cp /tmp/WhiteList.txt /opt/etc/pcap_dnsproxy
+		rm -f /tmp/WhiteList_tmp.txt /tmp/WhiteList.txt /tmp/accelerated-domains.china.conf /tmp/google.china.conf
+	
+		# Update Local Routing
+		curl -s --insecure 'https://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | grep ipv4 | grep CN | awk -F\| '{printf("%s/%d\n", $4, 32-log($5)/log(2))}' > /tmp/Routing_IPv4.txt
+		echo -e '[Local Routing]' >> /tmp/Routing_IPv4_tmp.txt
+		echo -e '## China mainland routing blocks' >> /tmp/Routing_IPv4_tmp.txt
+		echo -e "## Last update: $DATE\n\n" >> /tmp/Routing_IPv4_tmp.txt
+		echo -e '## IPv4' >> /tmp/Routing_IPv4_tmp.txt
+		echo -e '## Get the latest database from APNIC -> https://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' >> /tmp/Routing_IPv4_tmp.txt
+		cat /tmp/Routing_IPv4.txt >> /tmp/Routing_IPv4_tmp.txt
+
+		curl -s --insecure 'https://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | grep ipv6 | grep CN | awk -F\| '{printf("%s/%d\n", $4, $5)}' > /tmp/Routing_IPv6.txt
+		echo -e '## IPv6' >> /tmp/Routing_IPv6_tmp.txt
+		echo -e '## Get the latest database from APNIC -> https://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' >> /tmp/Routing_IPv6_tmp.txt
+		cat /tmp/Routing_IPv6.txt >> /tmp/Routing_IPv6_tmp.txt
+
+		cat /tmp/Routing_IPv6_tmp.txt >> /tmp/Routing_IPv4_tmp.txt
+		touch /tmp/Routing.txt
+		cat /tmp/Routing_IPv4_tmp.txt >> /tmp/Routing.txt
+		echo -e -n "$ansi_white Updating Local Routing... "
+		sleep 1
+		echo -e "            $ansi_green done. $ansi_std" 
+	
+		cp /tmp/Routing.txt /opt/etc/pcap_dnsproxy
+		rm -f /tmp/Routing_IPv4.txt /tmp/Routing_IPv4_tmp.txt /tmp/Routing_IPv6.txt /tmp/Routing_IPv6_tmp.txt /tmp/Routing.txt
 	else
 		wget -q -t0 -O- 'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > /opt/etc/chnroute.txt
 		cd $PREFIX/shadowsocks/dnsmasq.d/;curl -s --insecure -O https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf;cd /
@@ -808,19 +856,24 @@ uptest= none;
 	rm -f $PREFIX/shadowsocks/dns.list
 	cat $RULE_FILE >> $LINE
 	rm -f $PREFIX/shadowsocks/ignore_tmp.txt
+	
+	if [ -f "$PREFIX/shadowsocks/update.lock" ]
+	then
+		echo '['$DATE'] Has loaded China route table.' > /var/log/chnroutes.log
+	else
+		if [ -f "/var/log/pcap_dnsproxy.lock" ]; then
+			/opt/etc/init.d/S27pcap-dnsproxy restart
+		else
+			/opt/etc/init.d/S24chinadns restart
+		fi
+	fi
+	echo -e -n "$ansi_white Updating chnroutes... "
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"
-	
-	if [ -f "$PREFIX/shadowsocks/update_chnroutes.lock" ]
-	then
-		echo "$(date): Has loaded China route table" > /var/log/chnroutes.log
-	else
-#		/opt/etc/init.d/S24chinadns restart
-		$PREFIX/shadowsocks/shadowsocks flush
-		sleep 1
-		$PREFIX/shadowsocks/shadowsocks rules
-		service dnsmasq restart	
-	fi
+	$PREFIX/shadowsocks/shadowsocks flush
+	sleep 1
+	$PREFIX/shadowsocks/shadowsocks rules
+	service dnsmasq restart	
 	;;
 
 "update_gfwlist" )
@@ -842,34 +895,33 @@ uptest= none;
 	;;
 	
 "check" )
-	LOGTIME=$(date "+%Y-%m-%d %H:%M:%S")
 	SHADOWSOCKS=$(ps | grep "ss-redir" | grep -v "grep")
 	if [ -f "/var/log/shadowsocks.lock" ]; then
 		if [ -z "$SHADOWSOCKS" ]; then
-        		echo '['$LOGTIME'] Shadowsoks abnormal operation, restarting shadowsocks.' >> /var/log/shadowsocks_watchdog.log 2>&1
+        		echo '['$DATE'] Shadowsoks abnormal operation, restarting shadowsocks.' >> /var/log/shadowsocks_watchdog.log 2>&1
 			/opt/etc/init.d/S22shadowsocks start
 		else
-      			echo '['$LOGTIME'] No problem, the normal operation of shadowsoks.' >> /var/log/shadowsocks_watchdog.log 2>&1
+      			echo '['$DATE'] No problem, the normal operation of shadowsoks.' >> /var/log/shadowsocks_watchdog.log 2>&1
 		fi
 	fi
 
 	Pcap_DNSProxy=$(ps | grep "Pcap_DNSProxy" | grep -v "grep")
 	if [ -f "/var/log/pcap_dnsproxy.lock" ]; then
 		if [ -z "$Pcap_DNSProxy" ]; then
-			echo '['$LOGTIME'] Pcap_DNSProxy abnormal operation, restarting Pcap_DNSProxy.' >> /var/log/Pcap_DNSProxy_watchdog.log 2>&1
+			echo '['$DATE'] Pcap_DNSProxy abnormal operation, restarting Pcap_DNSProxy.' >> /var/log/Pcap_DNSProxy_watchdog.log 2>&1
 #			/opt/etc/init.d/S27pcap-dnsproxy start
 		else
-			echo '['$LOGTIME'] No problem, the normal operation of Pcap_DNSProxy.' >> /var/log/Pcap_DNSProxy_watchdog.log 2>&1
+			echo '['$DATE'] No problem, the normal operation of Pcap_DNSProxy.' >> /var/log/Pcap_DNSProxy_watchdog.log 2>&1
 		fi
 	fi	
 	
 	PDNSD=$(ps | grep "pdnsd" | grep -v "grep")
 	if [ -f "/var/log/pdnsd.lock" ]; then	
 		if [ -z "$PDNSD" ]; then
-			echo '['$LOGTIME'] Pdnsd abnormal operation, restarting pdnsd.' >> /var/log/pdnsd_watchdog.log 2>&1
+			echo '['$DATE'] Pdnsd abnormal operation, restarting pdnsd.' >> /var/log/pdnsd_watchdog.log 2>&1
 #			/opt/etc/init.d/S26pdnsd start
 		else
-			echo '['$LOGTIME'] No problem, the normal operation of pdnsd.' >> /var/log/pdnsd_watchdog.log 2>&1
+			echo '['$DATE'] No problem, the normal operation of pdnsd.' >> /var/log/pdnsd_watchdog.log 2>&1
 		fi
 	fi	
 
@@ -880,10 +932,10 @@ uptest= none;
 		CHINADNS=$(ps | grep "chinadns" | grep -v "grep")
 		if [ -f "/var/log/chinadns.lock" ]; then
 			if [ -z "$CHINADNS" ]; then
-				echo '['$LOGTIME'] ChinaDNS is restarting.' >> /var/log/chinadns_watchdog.log 2>&1
+				echo '['$DATE'] ChinaDNS is restarting.' >> /var/log/chinadns_watchdog.log 2>&1
 #				/opt/etc/init.d/S24chinadns start
 			else
-				echo '['$LOGTIME'] ChinaDNS no problem.' >> /var/log/chinadns_watchdog.log 2>&1
+				echo '['$DATE'] ChinaDNS no problem.' >> /var/log/chinadns_watchdog.log 2>&1
 			fi
 		fi
 	fi	
@@ -1112,7 +1164,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 	fi 
 
 	if [ -f "$PREFIX/shadowsocks/safe.sh" ]; then	
-		echo '['$LOGTIME'] Already exists.' >> /var/log/safe.log 
+		echo '['$DATE'] Already exists.' >> /var/log/safe.log 
 	else
 		if [ -f "/opt/var/log/allowed_within.lock" ]; then
 			echo -e $INFO Creating safe script...
@@ -1481,7 +1533,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 	;;
 						
 *)
-	echo -e "\033[44;37m Usage : $0 {set_up|run|ipset|rules|global|flush|update_chnroutes|update_gfwlist|check|ss_switch|mult_switch|lan_ignore|off_on|update_rebuild|mail} \033[0m"
+	echo -e "\033[44;37m Usage : $0 {set_up|run|ipset|rules|global|flush|update|update_gfwlist|check|ss_switch|mult_switch|lan_ignore|off_on|update_rebuild|mail} \033[0m"
 	echo -e "\033[36m ============================================================================================= \033[1m"
     	echo -e "\033[31m Examples: \033[1m"
 	echo -e "\033[44;37m   $0 set_up \033[0m"
@@ -1490,7 +1542,7 @@ Your Choice(Direct enter 0 is Restore Default):"
     	echo -e "\033[44;37m   $0 rules \033[0m"
     	echo -e "\033[44;37m   $0 global \033[0m"
     	echo -e "\033[44;37m   $0 flush \033[0m"
-	echo -e "\033[44;37m   $0 update_chnroutes \033[0m"
+	echo -e "\033[44;37m   $0 update \033[0m"
 	echo -e "\033[44;37m   $0 update_gfwlist \033[0m"
 	echo -e "\033[44;37m   $0 check \033[0m"
 	echo -e "\033[44;37m   $0 account_switching \033[0m"
@@ -1503,7 +1555,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 	echo -e "\033[44;37m   [rules] Application Firewall Policy \033[0m"
     	echo -e "\033[44;37m   [global] Global Proxy \033[0m"
 	echo -e "\033[44;37m   [flush] Clear firewall policy \033[0m"
-	echo -e "\033[44;37m   [update_chnroutes] Update China routing table \033[0m"
+	echo -e "\033[44;37m   [update] Update Update chnroutes Routing Host \033[0m"
 	echo -e "\033[44;37m   [update_gfwlist] Update GFWLIST domain \033[0m"
 	echo -e "\033[44;37m   [check] Guardian ss-redir \033[0m"
 	echo -e "\033[44;37m   [ss_switch] Account switching \033[0m"
