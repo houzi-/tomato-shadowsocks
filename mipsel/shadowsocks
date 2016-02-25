@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.2.22
+# Last edited: 2016.2.26
 # Version: V4.9-1 (MIPS final version)
 # Explain: This script can be used only for shibby Tomato MIPS firmware.
 # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
@@ -906,10 +906,10 @@ uptest= none;
 		fi
 	fi
 
-	dnscrypt-proxy=$(ps | grep "dnscrypt-proxy" | grep -v "grep")
+	dnscrypt=$(ps | grep "dnscrypt-proxy" | grep -v "grep")
 	if [ -f "/var/log/dnscrypt-proxy.lock" ]; then
-		if [ -z "$dnscrypt-proxy" ]; then
-			echo '['$DATE'] Pcap_DNSProxy abnormal operation, restarting dnscrypt-proxy.' >> /var/log/dnscrypt-proxy_watchdog.log 2>&1
+		if [ -z "$dnscrypt" ]; then
+			echo '['$DATE'] dnscrypt-proxy abnormal operation, restarting dnscrypt-proxy.' >> /var/log/dnscrypt-proxy_watchdog.log 2>&1
 #			/opt/etc/init.d/S29dnscrypt-proxy start
 		else
 			echo '['$DATE'] No problem, the normal operation of dnscrypt-proxy.' >> /var/log/dnscrypt-proxy_watchdog.log 2>&1
