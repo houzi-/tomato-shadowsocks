@@ -1,8 +1,8 @@
 #!/bin/sh
 #
 # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.2.26
-# Version: V4.9-1 (MIPS final version)
+# Last edited: 2016.2.29
+# Version: V4.9-2 (MIPS final version)
 # Explain: This script can be used only for shibby Tomato MIPS firmware.
 # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
 # Description: This is a science on ShadowSocks Internet automatic configuration script in Tomato under.
@@ -74,7 +74,7 @@ case ${1} in
 			cp /tmp/shadowsocks $PREFIX/shadowsocks
 			mount -o bind $PREFIX/opt /opt
 			cd /opt && wget -O - http://entware.wl500g.info/binaries/entware/installer/entware_install.sh | sh
-			cd /tmp && opkg install china* pdnsd* pcap* reso* shadow* diff*	
+			cd /tmp && opkg install china* pdnsd* pcap* reso* shadow* diff*	dnscr* cur*
 			echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
 			sleep 5
 			ln -s $PREFIX/shadowsocks/shadowsocks /opt/bin		
@@ -132,8 +132,8 @@ case ${1} in
 	fi	
 
 	SHELL=/opt/bin
-	echo -e "chinadns \nPcap_DNSProxy \nss-redir \nresolvip \npdnsd-ctl \ndiff" > /var/log/find.txt
-	cd $SHELL;find chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff > /var/log/find_N.txt;echo $? > /var/log/diff.txt
+	echo -e "chinadns \nPcap_DNSProxy \nss-redir \nresolvip \npdnsd-ctl \ndiff \ndnscrypt-proxy \ncurl" > /var/log/find.txt
+	cd $SHELL;find chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy curl > /var/log/find_N.txt;echo $? > /var/log/diff.txt
 	DIFF=`sed -n '1p' /var/log/diff.txt`
 	diff -w /var/log/find.txt /var/log/find_N.txt | grep \^\< > /var/log/diff_show.txt
 	if [ "$DIFF" == "0" ]; then
@@ -141,13 +141,13 @@ case ${1} in
 		sleep 1 
 		echo -e "$ansi_green PASS. $ansi_std"
 	else
-		if [ ! -e $SHELL/chinadns -a ! -e $SHELL/diff -a ! -e $SHELL/Pcap_DNSProxy -a ! -e $SHELL/pdnsd-ctl -a ! -e $SHELL/resolvip -a ! -e $SHELL/ss-redir ]; then
+		if [ ! -e $SHELL/chinadns -a ! -e $SHELL/diff -a ! -e $SHELL/Pcap_DNSProxy -a ! -e $SHELL/pdnsd-ctl -a ! -e $SHELL/resolvip -a ! -e $SHELL/ss-redir -a ! -e $SHELL/dnscrypt-proxy -a ! -e $SHELL/curl ]; then
 			echo -e $DEPENDENCE
 			sleep 1
 			echo -e "$ansi_red ERROR. $ansi_std"
 			echo -e "$WARNING \n$BOLD Please install the following software:"$NORM
 			rm -rf PREFIX/*
-			echo -e $ansi_white"shadowsocks-libev \nchinadns \npdnsd \npcap-dnsproxy \nresolvip \ndiffutils"$ansi_std
+			echo -e $ansi_white"shadowsocks-libev \nchinadns \npdnsd \npcap-dnsproxy \nresolvip \ndiffutils \ndnscrypt-proxy \ncurl"$ansi_std
 			exit 0
 		else	
 			echo -e $DEPENDENCE
@@ -221,8 +221,9 @@ case ${1} in
 echo -e $INFO "Please select Please choose the following programs:\n\
 $BOLD##programs_1##:$NORM (ss-redir+gfwlist+pdnsd)\n\
 $BOLD##programs_2##:$NORM (ss-redir+chnroutes+chinadns+pdnsd)\n\
-$BOLD##programs_3##:$NORM (ss-redir+chnroutes+pcap_dnsproxy)\n\
-$BOLD##programs_4##:$NORM (ss-tunnel+chnroutes+chinadns)\n\
+$BOLD##programs_3##:$NORM (ss-redir+chnroutes+chinadns+dnscrypt-proxy)\n\
+$BOLD##programs_4##:$NORM (ss-redir+chnroutes+pcap_dnsproxy)\n\
+$BOLD##programs_5##:$NORM (ss-tunnel+chnroutes+chinadns)\n\
 Your Choice:"
 	read programs
 	if [ $programs == "1" ];then
@@ -419,6 +420,82 @@ uptest= none;
 	elif [ $programs == "3" ];then
 		echo -e "$BOLD Set programs_3..." $NORM
 		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  /opt/etc/init.d/S22shadowsocks
+		sed '4c PROCS=chinadns' /opt/etc/init.d/S22shadowsocks > /opt/etc/init.d/S24cn
+		sed '5c ARGS="-p 5353 -l /opt/etc/chinadns_iplist.txt -c /opt/etc/chnroute.txt -s 114.114.114.114,127.0.0.1:1053"' /opt/etc/init.d/S24cn > /opt/etc/init.d/S24chinadns
+
+		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S29dnscrypt-proxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
+		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start|restart))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
+
+		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
+		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
+		sed -i "s/^ARGS=\(.*\)114.114.114.114\(.*\)$/ARGS=\1$DNS\2/" /opt/etc/init.d/S24chinadns
+
+		rm -f /opt/etc/init.d/S24cn
+		chmod +x /opt/etc/init.d/S2*
+
+		touch $PREFIX/shadowsocks/update.lock
+		touch $PREFIX/shadowsocks/chnroutes.lock
+		$PREFIX/shadowsocks/shadowsocks run
+		sleep 4
+		$PREFIX/shadowsocks/shadowsocks ipset
+		sleep 2
+		$PREFIX/shadowsocks/shadowsocks rules
+
+		echo -e $INFO Configuring ntp server...
+		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
+		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
+		NTP=$PREFIX/shadowsocks/dnsmasq.d/ntp_server.conf
+		echo "server=/0.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/1.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/2.asia.pool.ntp.org/$DNS" >> $NTP
+		echo "server=/3.asia.pool.ntp.org/$DNS" >> $NTP
+		echo >> $NTP
+		rm -f $PREFIX/shadowsocks/dns.list
+
+		nvram set tm_dst="1"
+		nvram set tm_sel="UTC-8"
+		nvram set tm_tz="UTC-8"
+		nvram set ntp_kiss=""
+		nvram set ntp_kiss_ignore=""
+		nvram set ntp_server="0.asia.pool.ntp.org 1.asia.pool.ntp.org 2.asia.pool.ntp.org"
+		nvram set ntp_tdod="0"
+		nvram set ntp_updates="1"		
+		
+		echo -e $INFO Configuring dnsmasq_custom...
+		sleep 1
+		echo -e "no-resolv \nno-poll \ndomain-needed \nno-negcache \nserver=127.0.0.1#5353 \nall-servers \ncache-size=10000 \nconf-dir=$PREFIX/shadowsocks/dnsmasq.d" > /var/log/dnsmasq_custom.txt
+		DNS_CUSTOM=`sed -e '' /var/log/dnsmasq_custom.txt`
+		nvram set dnsmasq_custom="$DNS_CUSTOM"
+		nvram set dnsmasq_q="0"
+		nvram set dnsmasq_static_only="0"
+		nvram commit
+		service dnsmasq save
+		service dnsmasq restart
+
+		echo -e $INFO Configuring turn startup items and guard the capital...
+		echo -e "$PREFIX/opt/etc/init.d/auto.run" > /var/log/scr_c.txt
+		SCR=`sed -e '' /var/log/scr_c.txt`
+		nvram set script_wanup="$SCR"
+		nvram commit
+		service scripts save	
+
+		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/dnscrypt-proxy_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log" > /var/log/sch_c.txt
+		SCH=`sed -e '' /var/log/sch_c.txt`
+		nvram set sch_c1_cmd="shadowsocks check"
+		nvram set sch_c2_cmd="$SCH"
+		nvram set sch_c1="1,-1,127"
+		nvram set sch_c2="1,-30,127"
+		nvram commit
+
+		service scheduler save
+		service scheduler restart
+
+		rm -f $PREFIX/shadowsocks/update.lock
+		rm -f $PREFIX/shadowsocks/chnroutes.lock
+		killall shadowsocks > /dev/null		
+	elif [ $programs == "4" ];then
+		echo -e "$BOLD Set programs_3..." $NORM
+		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  /opt/etc/init.d/S22shadowsocks
 
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S27pcap-dnsproxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 		sed -i 's/^#\([ \t]\+iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5353\)/\1/' $PREFIX/shadowsocks/shadowsocks
@@ -490,7 +567,7 @@ uptest= none;
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
 		killall shadowsocks > /dev/null
-	elif [ $programs == "4" ];then
+	elif [ $programs == "5" ];then
 		echo -e "$BOLD Set programs_4..." $NORM
 		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  /opt/etc/init.d/S22shadowsocks
 		sed -e "s/shadowsocks.json\"/shadowsocks.json -b 0.0.0.0 -l 5300 -L 8.8.8.8:53 -u\"/" -e "s/PROCS=ss-redir/PROCS=ss-tunnel/" /opt/etc/init.d/S22shadowsocks > /opt/etc/init.d/S23ss-tunnel
@@ -1418,7 +1495,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 					sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-redir/PROCS=ss-local/" -i  /opt/etc/init.d/S22shadowsocks
 					sed -i 's/^\([ \t]\+\/opt\/etc\/init.d\/S27pcap-dnsproxy start\)/#\1/;s/^\([ \t]\+\/opt\/etc\/init.d\/S27pcap-dnsproxy restart\)/#\1/' $PREFIX/shadowsocks/shadowsocks
 					sed -i 's/^\([ \t]\+iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5353\)/#\1/' $PREFIX/shadowsocks/shadowsocks
-					sed -i 's/^\([ \t]\+iptables -t nat -A PREROUTING -p tcp --dport 53 -j DNAT --to-destination $lan_ipaddr:53\)/#\1/' $PREFIX/shadowsocks/shadowsocks
+#					sed -i 's/^\([ \t]\+iptables -t nat -A PREROUTING -p tcp --dport 53 -j DNAT --to-destination $lan_ipaddr:53\)/#\1/' $PREFIX/shadowsocks/shadowsocks
 					sleep 1
 					killall ss-redir
 					killall Pcap_DNSProxy
@@ -1435,8 +1512,9 @@ Your Choice(Direct enter 0 is Restore Default):"
 						sed -i 's/'"$JSON"'/ARGS="-c \/opt\/etc\/shadowsocks.json"/g' /opt/etc/init.d/S22shadowsocks
 					fi
 					sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-redir/PROCS=ss-local/" -i  /opt/etc/init.d/S22shadowsocks
-					sed -i 's/^\([ \t]\+\/opt\/etc\/init.d\/S24chinadns start\)/#\1/;s/^\([ \t]\+\/opt\/etc\/init.d\/S24chinadns restart\)/#\1/' $PREFIX/shadowsocks/shadowsocks
-					sed -i 's/^\([ \t]\+\/opt\/etc\/init.d\/S26pdnsd start\)/#\1/;s/^\([ \t]\+\/opt\/etc\/init.d\/S26pdnsd restart\)/#\1/' $PREFIX/shadowsocks/shadowsocks
+					sed -i 's/^\([ \t]\+\/opt\/etc\/init.d\/S26pdnsd start\)/#\1/' $PREFIX/shadowsocks/shadowsocks
+					sed -i 's/^\([ \t]\+\/opt\/etc\/init.d\/S29dnscrypt-proxy start\)/#\1/' $PREFIX/shadowsocks/shadowsocks
+					
 					sleep 1
 					killall ss-redir && killall chinadns &&killall pdnsd
 					rm -f $PREFIX/shadowsocks/flush.lock
@@ -1475,7 +1553,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 				sed -i 's/'"$JSON"'/ARGS="-c \/opt\/etc\/shadowsocks.json"/g' /opt/etc/init.d/S22shadowsocks
 			fi
 			sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-redir/PROCS=ss-local/" -i  /opt/etc/init.d/S22shadowsocks
-			sed -i 's/^\([ \t]\+\/opt\/etc\/init.d\/S26pdnsd start\)/#\1/;s/^\([ \t]\+\/opt\/etc\/init.d\/S26pdnsd restart\)/#\1/' $PREFIX/shadowsocks/shadowsocks
+			sed -i 's/^\([ \t]\+\/opt\/etc\/init.d\/S26pdnsd start\)/#\1/' $PREFIX/shadowsocks/shadowsocks
 			sleep 1
 			killall ss-redir &&killall pdnsd
 			sleep 1
