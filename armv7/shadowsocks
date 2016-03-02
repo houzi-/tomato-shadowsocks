@@ -1,8 +1,8 @@
 #!/bin/sh
 #
 # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.2.29
-# Version: V4.9-2 (ARM final version)
+# Last edited: 2016.3.2
+# Version: V4.9-3 (ARM final version)
 # Explain: This script can be used only for shibby Tomato ARM firmware.
 # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
 # Description: This is a science on ShadowSocks Internet automatic configuration script in Tomato under.
@@ -720,7 +720,7 @@ uptest= none;
 	echo -e -n "$ansi_white Loading ipset module... "
 	for module in ip_set ip_set_bitmap_ip ip_set_bitmap_ipmac ip_set_bitmap_port ip_set_hash_ip ip_set_hash_ipport ip_set_hash_ipportip ip_set_hash_ipportnet ip_set_hash_net ip_set_hash_netport ip_set_list_set xt_set
 	do
-		insmod $module
+		modprobe $module
 	done
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"
