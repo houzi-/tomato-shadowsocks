@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.3.4
+# Last edited: 2016.3.5
 # Version: V4.9-3 (MIPS final version)
 # Explain: This script can be used only for shibby Tomato MIPS firmware.
 # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
@@ -474,7 +474,7 @@ uptest= none;
 		
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
-		echo -e "no-resolv \nno-poll \ndomain-needed \nno-negcache \nserver=127.0.0.1#5353 \nall-servers \ncache-size=10000 \nconf-dir=$PREFIX/shadowsocks/dnsmasq.d" > /var/log/dnsmasq_custom.txt
+		echo -e "no-resolv \nno-poll \ndomain-needed \nno-negcache \nserver=127.0.0.1#5353 \nall-servers \nconf-dir=$PREFIX/shadowsocks/dnsmasq.d" > /var/log/dnsmasq_custom.txt
 		DNS_CUSTOM=`sed -e '' /var/log/dnsmasq_custom.txt`
 		nvram set dnsmasq_custom="$DNS_CUSTOM"
 		nvram set dnsmasq_q="0"
