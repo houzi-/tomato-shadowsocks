@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.3.11
+# Last edited: 2016.3.13
 # Version: V4.9-3 (ARM final version)
 # Explain: This script can be used only for shibby Tomato ARM firmware.
 # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
@@ -1657,49 +1657,56 @@ Your Choice(Direct enter 0 is Restore Default):"
 		cat /tmp/mail.txt | sendmail -v -Ssmtp.163.com -f$FROM -au$username -ap$password $TO &> /dev/null
 	fi
 	;;
+	
+"help" )
+	shadowsocks
+	;;
 				
 *)
-	echo -e "\033[44;37m Usage : $0 {set_up|run|ipset|rules|global|flush|update|update_gfwlist|check|ss_switch|mult_switch|lan_ignore|off_on|update_rebuild|mail} \033[0m"
-	echo -e "\033[36m ============================================================================================= \033[1m"
-    	echo -e "\033[31m Examples: \033[1m"
-	echo -e "\033[44;37m   $0 set_up \033[0m"
-	echo -e "\033[44;37m   $0 run \033[0m"
-	echo -e "\033[44;37m   $0 ipset \033[0m"
-    	echo -e "\033[44;37m   $0 rules \033[0m"
-    	echo -e "\033[44;37m   $0 global \033[0m"
-    	echo -e "\033[44;37m   $0 flush \033[0m"
-	echo -e "\033[44;37m   $0 update \033[0m"
-	echo -e "\033[44;37m   $0 update_gfwlist \033[0m"
-	echo -e "\033[44;37m   $0 check \033[0m"
-	echo -e "\033[44;37m   $0 account_switching \033[0m"
-	echo -e "\033[44;37m   $0 intranet_ignored \033[0m"
-	echo -e "\033[44;37m   $0 off_on \033[0m"
-	echo -e "\033[44;37m   $0 update_rebuild \033[0m"
-	echo -e "\033[44;37m   [set_up] Set ShadowSocks and ChinaDNS \033[0m"
-	echo -e "\033[44;37m   [run] Running ShadowSocks and ChinaDNS \033[0m"
-	echo -e "\033[44;37m   [ipset] Loading module and ipset rule \033[0m"
-	echo -e "\033[44;37m   [rules] Application Firewall Policy \033[0m"
-    	echo -e "\033[44;37m   [global] Global Proxy \033[0m"
-	echo -e "\033[44;37m   [flush] Clear firewall policy \033[0m"
-	echo -e "\033[44;37m   [update] Update chnroutes Routing Host \033[0m"
-	echo -e "\033[44;37m   [update_gfwlist] Update GFWLIST domain \033[0m"
-	echo -e "\033[44;37m   [check] Guardian ss-redir \033[0m"
-	echo -e "\033[44;37m   [ss_switch] Account switching \033[0m"
-	echo -e "\033[44;37m   [mult_switch] Multiple_switching \033[0m"
-	echo -e "\033[44;37m   [lan_ignore] LAN access control \033[0m"
-	echo -e "\033[44;37m   [off_on] Turn off switch \033[0m"
-	echo -e "\033[44;37m   [update_rebuild] Update script and rebuild \033[0m"
-	echo -e "\033[44;37m   [mail] Send shadowsocks running information \033[0m"
-	echo -e "\033[36m ============================================================================================= \033[1m"
-	echo -e "\033[37m \033[1m"
-	echo -e "#========================================#"
-	echo -e "      *             , "                    
-	echo -e "                  _/^\_ "                
-	echo -e "                 <     > "               
-	echo -e "                  /.-.\         * "                      
-	echo -e "                 ,@.*;@, "               
-	echo -e "                /_o.I %_\    * "                           
-	echo -e "#========================================#"
-    	exit 
-    	;;
+	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.3.13 $ansi_std"
+	echo -e "$ansi_green # Version: V4.9-3 (ARM final version) $ansi_std"
+	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
+	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
+	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic configuration script in Tomato under. $ansi_std"
+	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
+	echo -e "$ansi_green # This is free software, licensed under the GNU General Public License v3. $ansi_std"
+	echo -e "$ansi_green # See /LICENSE for more information. $ansi_std"
+	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
+	echo -e "$ansi_white ===================================================================== $ansi_std"
+	echo -e "$ansi_blue Usage: $ansi_std"
+	echo -e "$ansi_white   $0 set_up $ansi_std"
+	echo -e "$ansi_white   $0 run $ansi_std"
+	echo -e "$ansi_white   $0 ipset $ansi_std"
+	echo -e "$ansi_white   $0 rules $ansi_std"
+	echo -e "$ansi_white   $0 global $ansi_std"
+	echo -e "$ansi_white   $0 flush $ansi_std"
+	echo -e "$ansi_white   $0 update $ansi_std"
+	echo -e "$ansi_white   $0 update_gfwlist $ansi_std"
+	echo -e "$ansi_white   $0 check $ansi_std"
+	echo -e "$ansi_white   $0 account_switching $ansi_std"
+	echo -e "$ansi_white   $0 intranet_ignored $ansi_std"
+	echo -e "$ansi_white   $0 off_on $ansi_std"
+	echo -e "$ansi_white   $0 update_rebuild $ansi_std"
+	echo -e "$ansi_white   $0 mail $ansi_std"
+	echo -e "$ansi_white   $0 help $ansi_std"
+	echo -e "$ansi_white   [set_up] Set ShadowSocks and ChinaDNS $ansi_std"
+	echo -e "$ansi_white   [run] Running ShadowSocks and ChinaDNS $ansi_std"
+	echo -e "$ansi_white   [ipset] Loading module and ipset rule $ansi_std"
+	echo -e "$ansi_white   [rules] Application Firewall Policy $ansi_std"
+	echo -e "$ansi_white   [global] Global Proxy $ansi_std"
+	echo -e "$ansi_white   [flush] Clear firewall policy $ansi_std"
+	echo -e "$ansi_white   [update] Update chnroutes Routing Host $ansi_std"
+	echo -e "$ansi_white   [update_gfwlist] Update GFWLIST domain $ansi_std"
+	echo -e "$ansi_white   [check] Guardian ss-redir $ansi_std"
+	echo -e "$ansi_white   [ss_switch] Account switching $ansi_std"
+	echo -e "$ansi_white   [mult_switch] Multiple_switching $ansi_std"
+	echo -e "$ansi_white   [lan_ignore] LAN access control $ansi_std"
+	echo -e "$ansi_white   [off_on] Turn off switch $ansi_std"
+	echo -e "$ansi_white   [update_rebuild] Update script and rebuild $ansi_std"
+	echo -e "$ansi_white   [mail] Send shadowsocks running information $ansi_std"
+	echo -e "$ansi_white   [help] Script help $ansi_std"
+	echo -e "$ansi_white ===================================================================== $ansi_std"
+	exit 
+	;;
 esac
