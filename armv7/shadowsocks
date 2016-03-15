@@ -1,8 +1,8 @@
 #!/bin/sh
 #
 # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.3.13
-# Version: V4.9-3 (ARM final version)
+# Last edited: 2016.3.15
+# Version: V4.9-4 (ARM final version)
 # Explain: This script can be used only for shibby Tomato ARM firmware.
 # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
 # Description: This is a science on ShadowSocks Internet automatic configuration script in Tomato under.
@@ -140,8 +140,13 @@ case ${1} in
 
 	SHELL=/opt/bin
 	echo -e "chinadns \nPcap_DNSProxy \nss-redir \nresolvip \npdnsd-ctl \ndiff \ndnscrypt-proxy" > /var/log/find.txt
-	cd $SHELL;[ ! -f chinadns -o ! -f Pcap_DNSProxy -o ! -f ss-redir -o ! -f resolvip -o ! -f pdnsd-ctl -o ! -f diff -o ! -f dnscrypt-proxy ] && ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy > /var/log/find_N.txt
-	find chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy;echo $? > /var/log/diff.txt;cd /
+	cd $SHELL
+	if [ ! -f chinadns -o ! -f Pcap_DNSProxy -o ! -f ss-redir -o ! -f resolvip -o ! -f pdnsd-ctl -o ! -f diff -o ! -f dnscrypt-proxy ]; then	
+		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy > /var/log/find_N.txt
+	else
+		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy > /var/log/find_N.txt
+	fi
+	find chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy &> /dev/null;echo $? > /var/log/diff.txt;cd /
 	DIFF=`sed -n '1p' /var/log/diff.txt`
 	diff -w /var/log/find.txt /var/log/find_N.txt | grep \^\< > /var/log/diff_show.txt
 	if [ "$DIFF" == "0" ]; then
@@ -1664,8 +1669,8 @@ Your Choice(Direct enter 0 is Restore Default):"
 				
 *)
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.3.13 $ansi_std"
-	echo -e "$ansi_green # Version: V4.9-3 (ARM final version) $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.3.15 $ansi_std"
+	echo -e "$ansi_green # Version: V4.9-4 (ARM final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic configuration script in Tomato under. $ansi_std"
