@@ -1,8 +1,8 @@
 #!/bin/sh
 #
 # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.3.15
-# Version: V4.9-4 (MIPS final version)
+# Last edited: 2016.3.16
+# Version: V5.0 (MIPS final version)
 # Explain: This script can be used only for shibby Tomato MIPS firmware.
 # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
 # Description: This is a science on ShadowSocks Internet automatic configuration script in Tomato under.
@@ -51,12 +51,16 @@ PACKAGES="$ansi_white PACKAGES: "
 SHADOWSOCKS="$ansi_white SHADOWSOCKS: "
 START_SCRIPT="$ansi_white START_SCRIPT: "
 ShadowSocks_Account="$ansi_white ShadowSocks_Account: "
+DNSMASQ="$ansi_white DNSMASQ: "
 
 # You can mount the partition path editing (EP:"/jffs" or "/tmp/mnt/sdb1" )
-PREFIX=/jffs
+PREFIX=/mnt/sda1
 
 # Time
 DATE=$(date "+%Y-%m-%d %H:%M:%S")
+
+# Configure dnsmasq
+dnsmasq=/opt/etc/dnsmasq.conf
 
 case ${1} in
 
@@ -74,11 +78,12 @@ case ${1} in
 			cd $PREFIX;mkdir -p opt;mkdir -p shadowsocks;cd /;cd /tmp/home/root
 			cp /tmp/shadowsocks $PREFIX/shadowsocks
 			mount -o bind $PREFIX/opt /opt
-			cd /opt && wget -O - http://entware.wl500g.info/binaries/entware/installer/entware_install.sh | sh
-			cd /tmp && opkg install china* pdnsd* pcap* reso* shadow* diff*	dnscr* cur*
+			cd /opt && wget -O - http://pkg.entware.net/binaries/mipsel/installer/installer.sh | sh
+			cd /tmp && opkg install china* pdnsd* pcap* reso* shadow* diff*	dnscr* cur* dnsmasq-full
 			echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
 			sleep 5
-			ln -s $PREFIX/shadowsocks/shadowsocks /opt/bin		
+			ln -s $PREFIX/shadowsocks/shadowsocks /opt/bin
+			mkdir -p /opt/var/lib
 		else
 			echo -e "$ansi_yellow SHADOWSOCKS already installed! $ansi_std"
 		fi
@@ -136,6 +141,7 @@ case ${1} in
 	fi	
 
 	SHELL=/opt/bin
+	SBIN=/opt/sbin
 	echo -e "chinadns \nPcap_DNSProxy \nss-redir \nresolvip \npdnsd-ctl \ndiff \ndnscrypt-proxy \ncurl" > /var/log/find.txt
 	cd $SHELL
 	if [ ! -f chinadns -o ! -f Pcap_DNSProxy -o ! -f ss-redir -o ! -f resolvip -o ! -f pdnsd-ctl -o ! -f diff -o ! -f dnscrypt-proxy -o ! -f curl ]; then	
@@ -143,6 +149,23 @@ case ${1} in
 	else
 		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy curl > /var/log/find_N.txt
 	fi
+
+	find $SBIN/dnsmasq &> /dev/null;echo $? > /var/log/sbin.txt
+	sbin=`sed -n '1p' /var/log/sbin.txt`
+	if [ "$sbin" == "0" ]; then
+		echo -e -n $DNSMASQ
+		sleep 1 
+		echo -e "$ansi_green PASS. $ansi_std"
+	else
+		echo -e $DNSMASQ
+		sleep 1
+		echo -e "$ansi_red ERROR. $ansi_std"
+		echo -e "$WARNING \n$BOLD Please install the following software:"$NORM
+		rm -rf PREFIX/*
+		echo -e $ansi_white"dnsmasq-full"$ansi_std
+		exit 0
+	fi	
+	
 	find chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy curl &> /dev/null;echo $? > /var/log/diff.txt;cd /
 	DIFF=`sed -n '1p' /var/log/diff.txt`
 	diff -w /var/log/find.txt /var/log/find_N.txt | grep \^\< > /var/log/diff_show.txt
@@ -253,6 +276,15 @@ Your Choice:"
 #		sleep 1
 #		sed -r 's/#(['$'\t'' ]*PLAN=Pcap_DNSProxy)/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 
+		echo -e $INFO Configuring dnsmasq_custom...
+		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
+		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
+		echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
+		echo "dhcp-lease-max=255" >> $dnsmasq
+		echo "dhcp-authoritative" >> $dnsmasq
+		echo >> $dnsmasq
+
 		$PREFIX/shadowsocks/shadowsocks run
 		touch /var/log/ipset.lock
 		$PREFIX/shadowsocks/shadowsocks ipset
@@ -279,14 +311,6 @@ Your Choice:"
 		nvram set ntp_server="0.asia.pool.ntp.org 1.asia.pool.ntp.org 2.asia.pool.ntp.org"
 		nvram set ntp_tdod="0"
 		nvram set ntp_updates="1"		
-		
-		echo -e $INFO Configuring dnsmasq_custom...
-		nvram set dnsmasq_custom="conf-dir=$PREFIX/shadowsocks/dnsmasq.d"
-		nvram set dnsmasq_q="0"
-		nvram set dnsmasq_static_only="0"
-		nvram commit
-		service dnsmasq save
-		service dnsmasq restart
 
 		rm -f /opt/etc/pdnsd.conf
 		cat > /opt/etc/pdnsd.conf <<-end
@@ -319,7 +343,6 @@ uptest= none;
 		SCR=`sed -e '' /var/log/scr_c.txt`
 		nvram set script_wanup="$SCR"
 		nvram commit
-		service scripts save
 
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log" > /var/log/sch_c.txt
 		SCH=`sed -e '' /var/log/sch_c.txt`
@@ -329,8 +352,6 @@ uptest= none;
 		nvram set sch_c2="1,-30,127"
 		nvram commit
 
-		service scheduler save
-		service scheduler restart
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
 	elif [ $programs == "2" ];then
@@ -376,6 +397,17 @@ uptest= none;
 }
 		end
 
+		echo -e $INFO Configuring dnsmasq_custom...
+		sleep 1
+		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \ncache-size=10000" >> $dnsmasq
+		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
+		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
+		echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
+		echo "dhcp-lease-max=255" >> $dnsmasq
+		echo "dhcp-authoritative" >> $dnsmasq
+		echo >> $dnsmasq
+
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
 		$PREFIX/shadowsocks/shadowsocks run
@@ -403,24 +435,12 @@ uptest= none;
 		nvram set ntp_server="0.asia.pool.ntp.org 1.asia.pool.ntp.org 2.asia.pool.ntp.org"
 		nvram set ntp_tdod="0"
 		nvram set ntp_updates="1"		
-		
-		echo -e $INFO Configuring dnsmasq_custom...
-		sleep 1
-		echo -e "no-resolv \nno-poll \ndomain-needed \nno-negcache \nserver=127.0.0.1#5353 \ncache-size=10000 \nconf-dir=$PREFIX/shadowsocks/dnsmasq.d" > /var/log/dnsmasq_custom.txt
-		DNS_CUSTOM=`sed -e '' /var/log/dnsmasq_custom.txt`
-		nvram set dnsmasq_custom="$DNS_CUSTOM"
-		nvram set dnsmasq_q="0"
-		nvram set dnsmasq_static_only="0"
-		nvram commit
-		service dnsmasq save
-		service dnsmasq restart
 
 		echo -e $INFO Configuring turn startup items and guard the capital...
 		echo -e "$PREFIX/opt/etc/init.d/auto.run" > /var/log/scr_c.txt
 		SCR=`sed -e '' /var/log/scr_c.txt`
 		nvram set script_wanup="$SCR"
-		nvram commit
-		service scripts save	
+		nvram commit	
 
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log" > /var/log/sch_c.txt
 		SCH=`sed -e '' /var/log/sch_c.txt`
@@ -429,9 +449,6 @@ uptest= none;
 		nvram set sch_c1="1,-1,127"
 		nvram set sch_c2="1,-30,127"
 		nvram commit
-
-		service scheduler save
-		service scheduler restart
 
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
@@ -445,7 +462,7 @@ uptest= none;
 
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S29dnscrypt-proxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start|restart))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
-		sed -i 's/^#\([ \t]\+iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5353\)/\1/' $PREFIX/shadowsocks/shadowsocks
+#		sed -i 's/^#\([ \t]\+iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5353\)/\1/' $PREFIX/shadowsocks/shadowsocks
 
 		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
 		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
@@ -453,6 +470,17 @@ uptest= none;
 
 		rm -f /opt/etc/init.d/S24cn
 		chmod +x /opt/etc/init.d/S2*
+
+		echo -e $INFO Configuring dnsmasq_custom...
+		sleep 1
+		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nproxy-dnssec \ncache-size=10000" >> $dnsmasq
+		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
+		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
+		echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
+		echo "dhcp-lease-max=255" >> $dnsmasq
+		echo "dhcp-authoritative" >> $dnsmasq
+		echo >> $dnsmasq
 
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
@@ -481,24 +509,12 @@ uptest= none;
 		nvram set ntp_server="0.asia.pool.ntp.org 1.asia.pool.ntp.org 2.asia.pool.ntp.org"
 		nvram set ntp_tdod="0"
 		nvram set ntp_updates="1"		
-		
-		echo -e $INFO Configuring dnsmasq_custom...
-		sleep 1
-		echo -e "no-resolv \nno-poll \ndomain-needed \nno-negcache \nserver=127.0.0.1#5353 \nall-servers \nproxy-dnssec \nconf-dir=$PREFIX/shadowsocks/dnsmasq.d" > /var/log/dnsmasq_custom.txt
-		DNS_CUSTOM=`sed -e '' /var/log/dnsmasq_custom.txt`
-		nvram set dnsmasq_custom="$DNS_CUSTOM"
-		nvram set dnsmasq_q="0"
-		nvram set dnsmasq_static_only="0"
-		nvram commit
-		service dnsmasq save
-		service dnsmasq restart
 
 		echo -e $INFO Configuring turn startup items and guard the capital...
 		echo -e "$PREFIX/opt/etc/init.d/auto.run" > /var/log/scr_c.txt
 		SCR=`sed -e '' /var/log/scr_c.txt`
 		nvram set script_wanup="$SCR"
 		nvram commit
-		service scripts save	
 
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/dnscrypt-proxy_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log" > /var/log/sch_c.txt
 		SCH=`sed -e '' /var/log/sch_c.txt`
@@ -508,10 +524,7 @@ uptest= none;
 		nvram set sch_c2="1,-30,127"
 		nvram commit
 
-		service scheduler save
-		service scheduler restart
-
-		/opt/etc/init.d/S29dnscrypt-proxy start
+#		/opt/etc/init.d/S29dnscrypt-proxy start
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
@@ -528,6 +541,17 @@ uptest= none;
 #		sed 's/#\(iptables -t nat -I PREROUTING $PRE\)/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 #		sleep 1
 #		sed 's/#\(iptables -t nat -A PREROUTING $PRE2\)/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
+
+		echo -e $INFO Configuring dnsmasq_custom...
+		sleep 1
+		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nall-servers \nproxy-dnssec \ncache-size=10000" >> $dnsmasq
+		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
+		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
+		echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
+		echo "dhcp-lease-max=255" >> $dnsmasq
+		echo "dhcp-authoritative" >> $dnsmasq
+		echo >> $dnsmasq
 			
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
@@ -558,23 +582,11 @@ uptest= none;
 		nvram set ntp_tdod="0"
 		nvram set ntp_updates="1"
 
-		echo -e $INFO Configuring dnsmasq_custom...
-		sleep 1
-		echo -e "no-resolv \nno-poll \ndomain-needed \nno-negcache \nserver=127.0.0.1#5353 \nall-servers \ncache-size=10000 \nconf-dir=$PREFIX/shadowsocks/dnsmasq.d" > /var/log/dnsmasq_custom.txt
-		DNS_CUSTOM=`sed -e '' /var/log/dnsmasq_custom.txt`
-		nvram set dnsmasq_custom="$DNS_CUSTOM"
-		nvram set dnsmasq_q="0"
-		nvram set dnsmasq_static_only="0"
-		nvram commit
-		service dnsmasq save
-		service dnsmasq restart
-
 		echo -e $INFO Configuring turn startup items and guard the capital...
 		echo -e "$PREFIX/opt/etc/init.d/auto.run" > /var/log/scr_c.txt
 		SCR=`sed -e '' /var/log/scr_c.txt`
 		nvram set script_wanup="$SCR"
 		nvram commit
-		service scripts save
 
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/Pcap_DNSProxy_watchdog.log" > /var/log/sch_c.txt
 		SCH=`sed -e '' /var/log/sch_c.txt`
@@ -583,9 +595,6 @@ uptest= none;
 		nvram set sch_c1="1,-1,127"
 		nvram set sch_c2="1,-30,127"
 		nvram commit
-
-		service scheduler save
-		service scheduler restart
 
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
@@ -609,6 +618,17 @@ uptest= none;
 	
 		rm -f /opt/etc/init.d/S24cn
 		chmod +x /opt/etc/init.d/S2*
+
+		echo -e $INFO Configuring dnsmasq_custom...
+		sleep 1
+		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \ncache-size=10000" >> $dnsmasq
+		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
+		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
+		echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
+		echo "dhcp-lease-max=255" >> $dnsmasq
+		echo "dhcp-authoritative" >> $dnsmasq
+		echo >> $dnsmasq
 			
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
@@ -638,23 +658,11 @@ uptest= none;
 		nvram set ntp_tdod="0"
 		nvram set ntp_updates="1"		
 
-		echo -e $INFO Configuring dnsmasq_custom...
-		sleep 1
-		echo -e "no-resolv \nno-poll \ndomain-needed \nno-negcache \nserver=127.0.0.1#5353 \ncache-size=10000 \nconf-dir=$PREFIX/shadowsocks/dnsmasq.d" > /var/log/dnsmasq_custom.txt
-		DNS_CUSTOM=`sed -e '' /var/log/dnsmasq_custom.txt`
-		nvram set dnsmasq_custom="$DNS_CUSTOM"
-		nvram set dnsmasq_q="0"
-		nvram set dnsmasq_static_only="0"
-		nvram commit
-		service dnsmasq save
-		service dnsmasq restart
-
 		echo -e $INFO Configuring turn startup items and guard the capital...
 		echo -e "$PREFIX/opt/etc/init.d/auto.run" > /var/log/scr_c.txt
 		SCR=`sed -e '' /var/log/scr_c.txt`
 		nvram set script_wanup="$SCR"
 		nvram commit
-		service scripts save
 
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/chinadns.log" > /var/log/sch_c.txt
 		SCH=`sed -e '' /var/log/sch_c.txt`
@@ -663,9 +671,6 @@ uptest= none;
 		nvram set sch_c1="1,-1,127"
 		nvram set sch_c2="1,-30,127"
 		nvram commit
-
-		service scheduler save
-		service scheduler restart
 			
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
@@ -685,6 +690,16 @@ uptest= none;
 
 	PROCESS=$(ps | grep "ss-redir" | grep -v "grep")
 	if [ -z "$PROCESS" ]; then
+		rm -f /opt/etc/hosts
+		hosts=/opt/etc/hosts
+		nvram get wan_ipaddr > /opt/var/log/ipaddr.log
+		echo "`nvram get lan_ipaddr` `nvram get wan_hostname`" >> $hosts
+		echo "`nvram get wan_ipaddr` wan1-ip" >> $hosts
+		echo "127.0.0.1 wan2-ip" >> $hosts
+		echo >> $hosts
+		chmod 755 $hosts
+		service dnsmasq stop && /opt/etc/init.d/S56dnsmasq start
+
 		/opt/etc/init.d/S22shadowsocks start && touch /var/log/shadowsocks.lock
 #		/opt/etc/init.d/S23ss-tunnel start && touch /var/log/ss-tunnel.lock
 #		/opt/etc/init.d/S26pdnsd start && touch /var/log/pdnsd.lock
@@ -996,17 +1011,18 @@ uptest= none;
 			$PREFIX/shadowsocks/shadowsocks flush
 			sleep 1
 			$PREFIX/shadowsocks/shadowsocks rules
+			/opt/etc/init.d/S56dnsmasq restart			
 		else
 			/opt/etc/init.d/S24chinadns restart
 			$PREFIX/shadowsocks/shadowsocks flush
 			sleep 1
 			$PREFIX/shadowsocks/shadowsocks rules
+			/opt/etc/init.d/S56dnsmasq restart
 		fi
 	fi
 	echo -e -n "$ansi_white Updating chnroutes... "
 	sleep 1
-	echo -e "            $ansi_green done. $ansi_std"
-	service dnsmasq restart	
+	echo -e "            $ansi_green done. $ansi_std"	
 	;;
 
 "update_gfwlist" )
@@ -1024,7 +1040,7 @@ uptest= none;
 	sed -i "s|^\(ipset.*\)/[^/]*$|\1/gfw_black_list|" $PREFIX/shadowsocks/dnsmasq.d/gfwlist.conf
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"	
-	service dnsmasq restart
+	/opt/etc/init.d/S56dnsmasq restart
 	;;
 	
 "check" )
@@ -1036,6 +1052,24 @@ uptest= none;
 		else
       			echo '['$DATE'] No problem, the normal operation of shadowsoks.' >> /var/log/shadowsocks_watchdog.log 2>&1
 		fi
+	fi
+
+	oldipaddr=`sed -n '1p' /opt/var/log/ipaddr.log`
+	newipaddr=`nvram get wan_ipaddr`
+	if [ $(ps|grep async|grep -v grep|wc -l) -ge 1 ]; then
+		service dnsmasq stop
+		/opt/etc/init.d/S56dnsmasq start
+	else
+		if [ $oldipaddr != $newipaddr ];then
+			nvram get wan_ipaddr > /opt/var/log/ipaddr.log
+			rm -f /opt/etc/hosts
+			echo "`nvram get lan_ipaddr` `nvram get wan_hostname`" >> $hosts
+			echo "`nvram get wan_ipaddr` wan1-ip" >> $hosts
+			echo "127.0.0.1 wan2-ip" >> $hosts
+			echo >> $hosts
+			chmod 755 $hosts
+			service dnsmasq stop && /opt/etc/init.d/S56dnsmasq start
+		fi		
 	fi
 
 	dnscrypt=$(ps | grep "dnscrypt-proxy" | grep -v "grep")
@@ -1152,11 +1186,11 @@ uptest= none;
 	if [ "no" == $(ask_yes_or_no "Select GFWLIST?") ]; then
 		echo -e $INFO Switch CHNROUTES...		
 		$PREFIX/shadowsocks/shadowsocks run
-		service dnsmasq restart
+		/opt/etc/init.d/S56dnsmasq restart
 	else
 		echo -e $INFO Switch GFWLIST...
 		$PREFIX/shadowsocks/shadowsocks run
-		service dnsmasq restart
+		/opt/etc/init.d/S56dnsmasq restart
 	fi
 	;;
 
@@ -1284,11 +1318,11 @@ Your Choice(Direct enter 0 is Restore Default):"
 		$PREFIX/shadowsocks/shadowsocks flush
 		sleep 2
 		$PREFIX/shadowsocks/shadowsocks rules
-		service dnsmasq restart
+		/opt/etc/init.d/S56dnsmasq restart
 	else
 		echo -e $INFO Switch GFWLIST...
 		/opt/etc/init.d/S22shadowsocks restart
-		service dnsmasq restart
+		/opt/etc/init.d/S56dnsmasq restart
 	fi
 	;;	
 
@@ -1625,44 +1659,25 @@ Your Choice(Direct enter 0 is Restore Default):"
 	fi
 
 	echo -e $INFO Clear ^scripts ^scheduler ^dnsmasq_custom...	
-	COMPARE=/jffs
-	if [ "$PREFIX" != "$COMPARE" ]; then
-		nvram set script_usbmount=""
-		nvram set script_fire=""
-		nvram commit
-		service scripts save
-		sleep 1				
-		nvram set sch_c1_cmd=""
-		nvram set sch_c2_cmd=""
-		nvram set sch_c1="0,-30,127"
-		nvram set sch_c2="0,-30,127"
-		nvram commit
-		service scheduler save
-		service scheduler restart
-		sleep 1
-		nvram unset dnsmasq_custom=""
-		nvram commit
-		service dnsmasq save
-		service dnsmasq restart	
-	else
-		nvram set script_init=""
-		nvram set script_fire=""
-		nvram commit
-		service scripts save
-		sleep 1
-		nvram set sch_c1_cmd=""
-		nvram set sch_c2_cmd=""
-		nvram set sch_c1="0,-30,127"
-		nvram set sch_c2="0,-30,127"
-		nvram commit
-		service scheduler save
-		service scheduler restart
-		sleep 1
-		nvram unset dnsmasq_custom=""
-		nvram commit
-		service dnsmasq save
-		service dnsmasq restart			
-	fi
+	nvram set script_wanup=""
+	nvram commit
+	sleep 1				
+	nvram set sch_c1_cmd=""
+	nvram set sch_c2_cmd=""
+	nvram set sch_c1="0,-30,127"
+	nvram set sch_c2="0,-30,127"
+	nvram commit
+
+	rm -f /opt/etc/dnsmasq.conf
+	echo "interface=`nvram get lan_ifname`" >> $dnsmasq
+	echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
+	echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
+	echo "dhcp-lease-max=255" >> $dnsmasq
+	echo "dhcp-authoritative" >> $dnsmasq
+	echo >> $dnsmasq	
+	/opt/etc/init.d/S56dnsmasq restart
+
+	echo -e $INFO OK!
 
 	echo -e $INFO OK!	
 	;;
@@ -1682,8 +1697,8 @@ Your Choice(Direct enter 0 is Restore Default):"
 				
 *)
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.3.15 $ansi_std"
-	echo -e "$ansi_green # Version: V4.9-4 (MIPS final version) $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.3.16 $ansi_std"
+	echo -e "$ansi_green # Version: V5.0 (MIPS final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic configuration script in Tomato under. $ansi_std"
