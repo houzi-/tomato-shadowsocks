@@ -1,9 +1,9 @@
 #tomato-shadowsocks script
 Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com>
  
-Last edited: 2016.3.15
+Last edited: 2016.3.18
 
-Version: V4.9-4 (final version)
+Version: V5.0 (final version)
 
 Explain: This script can be used only for shibby Tomato firmware.
 

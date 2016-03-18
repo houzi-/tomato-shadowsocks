@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.3.16
+# Last edited: 2016.3.18
 # Version: V5.0 (MIPS final version)
 # Explain: This script can be used only for shibby Tomato MIPS firmware.
 # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
@@ -54,7 +54,7 @@ ShadowSocks_Account="$ansi_white ShadowSocks_Account: "
 DNSMASQ="$ansi_white DNSMASQ: "
 
 # You can mount the partition path editing (EP:"/jffs" or "/tmp/mnt/sdb1" )
-PREFIX=/mnt/sda1
+PREFIX=/jffs
 
 # Time
 DATE=$(date "+%Y-%m-%d %H:%M:%S")
@@ -79,11 +79,10 @@ case ${1} in
 			cp /tmp/shadowsocks $PREFIX/shadowsocks
 			mount -o bind $PREFIX/opt /opt
 			cd /opt && wget -O - http://pkg.entware.net/binaries/mipsel/installer/installer.sh | sh
-			cd /tmp && opkg install china* pdnsd* pcap* reso* shadow* diff*	dnscr* cur* dnsmasq-full
+			cd /tmp && opkg install china* pdnsd* pcap* reso* shadow* diff*	dnscr* cur* dnsma*
 			echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
 			sleep 5
 			ln -s $PREFIX/shadowsocks/shadowsocks /opt/bin
-			mkdir -p /opt/var/lib
 		else
 			echo -e "$ansi_yellow SHADOWSOCKS already installed! $ansi_std"
 		fi
@@ -140,10 +139,10 @@ case ${1} in
 		echo -e "$ansi_green PASS. $ansi_std"		
 	fi	
 
-	SHELL=/opt/bin
-	SBIN=/opt/sbin
+	BIN=/opt/bin
+	SBIN=/opt/sbin	
 	echo -e "chinadns \nPcap_DNSProxy \nss-redir \nresolvip \npdnsd-ctl \ndiff \ndnscrypt-proxy \ncurl" > /var/log/find.txt
-	cd $SHELL
+	cd $BIN
 	if [ ! -f chinadns -o ! -f Pcap_DNSProxy -o ! -f ss-redir -o ! -f resolvip -o ! -f pdnsd-ctl -o ! -f diff -o ! -f dnscrypt-proxy -o ! -f curl ]; then	
 		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy curl > /var/log/find_N.txt
 	else
@@ -174,7 +173,7 @@ case ${1} in
 		sleep 1 
 		echo -e "$ansi_green PASS. $ansi_std"
 	else
-		if [ ! -e $SHELL/chinadns -a ! -e $SHELL/diff -a ! -e $SHELL/Pcap_DNSProxy -a ! -e $SHELL/pdnsd-ctl -a ! -e $SHELL/resolvip -a ! -e $SHELL/ss-redir -a ! -e $SHELL/dnscrypt-proxy -a ! -e $SHELL/curl ]; then
+		if [ ! -e $BIN/chinadns -a ! -e $BIN/diff -a ! -e $BIN/Pcap_DNSProxy -a ! -e $BIN/pdnsd-ctl -a ! -e $BIN/resolvip -a ! -e $BIN/ss-redir -a ! -e $BIN/dnscrypt-proxy -a ! -e $BIN/curl ]; then
 			echo -e $DEPENDENCE
 			sleep 1
 			echo -e "$ansi_red ERROR. $ansi_std"
@@ -524,7 +523,7 @@ uptest= none;
 		nvram set sch_c2="1,-30,127"
 		nvram commit
 
-#		/opt/etc/init.d/S29dnscrypt-proxy start
+		/opt/etc/init.d/S29dnscrypt-proxy start
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
@@ -690,16 +689,7 @@ uptest= none;
 
 	PROCESS=$(ps | grep "ss-redir" | grep -v "grep")
 	if [ -z "$PROCESS" ]; then
-		rm -f /opt/etc/hosts
-		hosts=/opt/etc/hosts
-		nvram get wan_ipaddr > /opt/var/log/ipaddr.log
-		echo "`nvram get lan_ipaddr` `nvram get wan_hostname`" >> $hosts
-		echo "`nvram get wan_ipaddr` wan1-ip" >> $hosts
-		echo "127.0.0.1 wan2-ip" >> $hosts
-		echo >> $hosts
-		chmod 755 $hosts
-		service dnsmasq stop && /opt/etc/init.d/S56dnsmasq start
-
+		mount -o bind /opt/sbin/dnsmasq /usr/sbin/dnsmasq && service dnsmasq restart
 		/opt/etc/init.d/S22shadowsocks start && touch /var/log/shadowsocks.lock
 #		/opt/etc/init.d/S23ss-tunnel start && touch /var/log/ss-tunnel.lock
 #		/opt/etc/init.d/S26pdnsd start && touch /var/log/pdnsd.lock
@@ -852,7 +842,7 @@ uptest= none;
 			iptables -t nat -I PREROUTING 1 ${IFNAME:+-i $IFNAME} -p tcp -m multiport --dports 22,80,443 -m set ! --set ss_spec_lan_ac src -j SS_SPEC_WAN_AC
 		fi
 		lan_ipaddr=`nvram get lan_ipaddr`
-#		iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5353
+		iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5353
 #		iptables -t nat -A PREROUTING -p tcp --dport 53 -j DNAT --to-destination $lan_ipaddr:53
 		IFNAME=$(nvram get lan_ifname &> /dev/null)
 		iptables -t nat -I OUTPUT 1 ${IFNAME:+-o $IFNAME} -p tcp -m multiport --dports 22,80,443 -j SS_SPEC_WAN_AC
@@ -1011,13 +1001,13 @@ uptest= none;
 			$PREFIX/shadowsocks/shadowsocks flush
 			sleep 1
 			$PREFIX/shadowsocks/shadowsocks rules
-			/opt/etc/init.d/S56dnsmasq restart			
+			service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start			
 		else
 			/opt/etc/init.d/S24chinadns restart
 			$PREFIX/shadowsocks/shadowsocks flush
 			sleep 1
 			$PREFIX/shadowsocks/shadowsocks rules
-			/opt/etc/init.d/S56dnsmasq restart
+			service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 		fi
 	fi
 	echo -e -n "$ansi_white Updating chnroutes... "
@@ -1040,7 +1030,7 @@ uptest= none;
 	sed -i "s|^\(ipset.*\)/[^/]*$|\1/gfw_black_list|" $PREFIX/shadowsocks/dnsmasq.d/gfwlist.conf
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"	
-	/opt/etc/init.d/S56dnsmasq restart
+	service dnsmasq restart
 	;;
 	
 "check" )
@@ -1052,24 +1042,6 @@ uptest= none;
 		else
       			echo '['$DATE'] No problem, the normal operation of shadowsoks.' >> /var/log/shadowsocks_watchdog.log 2>&1
 		fi
-	fi
-
-	oldipaddr=`sed -n '1p' /opt/var/log/ipaddr.log`
-	newipaddr=`nvram get wan_ipaddr`
-	if [ $(ps|grep async|grep -v grep|wc -l) -ge 1 ]; then
-		service dnsmasq stop
-		/opt/etc/init.d/S56dnsmasq start
-	else
-		if [ $oldipaddr != $newipaddr ];then
-			nvram get wan_ipaddr > /opt/var/log/ipaddr.log
-			rm -f /opt/etc/hosts
-			echo "`nvram get lan_ipaddr` `nvram get wan_hostname`" >> $hosts
-			echo "`nvram get wan_ipaddr` wan1-ip" >> $hosts
-			echo "127.0.0.1 wan2-ip" >> $hosts
-			echo >> $hosts
-			chmod 755 $hosts
-			service dnsmasq stop && /opt/etc/init.d/S56dnsmasq start
-		fi		
 	fi
 
 	dnscrypt=$(ps | grep "dnscrypt-proxy" | grep -v "grep")
@@ -1186,11 +1158,11 @@ uptest= none;
 	if [ "no" == $(ask_yes_or_no "Select GFWLIST?") ]; then
 		echo -e $INFO Switch CHNROUTES...		
 		$PREFIX/shadowsocks/shadowsocks run
-		/opt/etc/init.d/S56dnsmasq restart
+		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 	else
 		echo -e $INFO Switch GFWLIST...
 		$PREFIX/shadowsocks/shadowsocks run
-		/opt/etc/init.d/S56dnsmasq restart
+		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 	fi
 	;;
 
@@ -1318,11 +1290,11 @@ Your Choice(Direct enter 0 is Restore Default):"
 		$PREFIX/shadowsocks/shadowsocks flush
 		sleep 2
 		$PREFIX/shadowsocks/shadowsocks rules
-		/opt/etc/init.d/S56dnsmasq restart
+		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 	else
 		echo -e $INFO Switch GFWLIST...
 		/opt/etc/init.d/S22shadowsocks restart
-		/opt/etc/init.d/S56dnsmasq restart
+		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 	fi
 	;;	
 
@@ -1675,9 +1647,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 	echo "dhcp-lease-max=255" >> $dnsmasq
 	echo "dhcp-authoritative" >> $dnsmasq
 	echo >> $dnsmasq	
-	/opt/etc/init.d/S56dnsmasq restart
-
-	echo -e $INFO OK!
+	service dnsmasq restart
 
 	echo -e $INFO OK!	
 	;;
@@ -1697,7 +1667,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 				
 *)
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.3.16 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.3.18 $ansi_std"
 	echo -e "$ansi_green # Version: V5.0 (MIPS final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"

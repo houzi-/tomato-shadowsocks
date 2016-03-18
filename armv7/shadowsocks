@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.3.16
+# Last edited: 2016.3.18
 # Version: V5.0 (ARM final version)
 # Explain: This script can be used only for shibby Tomato ARM firmware.
 # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
@@ -57,7 +57,7 @@ ShadowSocks_Account="$ansi_white ShadowSocks_Account: "
 DNSMASQ="$ansi_white DNSMASQ: "
 
 # You can mount the partition path editing (EP:"/jffs" or "/tmp/mnt/sda1" )
-PREFIX=/mnt/sda1
+PREFIX=/jffs
 
 # Time
 DATE=$(date "+%Y-%m-%d %H:%M:%S")
@@ -82,7 +82,7 @@ case ${1} in
 			cp /tmp/shadowsocks $PREFIX/shadowsocks
 			mount -o bind $PREFIX/opt /opt
 			cd /opt && wget -O - http://pkg.entware.net/binaries/armv7/installer/entware_install.sh | sh
-			cd /tmp && opkg install china* pdnsd* pcap* reso* shadow* diff* dnscr* dnsmasq-full	
+			cd /tmp && opkg install china* pdnsd* pcap* reso* shadow* diff* dnscr* dnsma*	
 			echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
 			sleep 5
 			ln -s $PREFIX/shadowsocks/shadowsocks /opt/bin		
@@ -292,6 +292,15 @@ Your Choice:"
 #		sleep 1
 #		sed -r 's/#(['$'\t'' ]*PLAN=Pcap_DNSProxy)/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 
+		echo -e $INFO Configuring dnsmasq_custom...
+		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
+		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
+		echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
+		echo "dhcp-lease-max=255" >> $dnsmasq
+		echo "dhcp-authoritative" >> $dnsmasq
+		echo >> $dnsmasq
+
 		$PREFIX/shadowsocks/shadowsocks run
 		touch /var/log/ipset.lock
 		$PREFIX/shadowsocks/shadowsocks ipset
@@ -318,15 +327,6 @@ Your Choice:"
 		nvram set ntp_server="0.asia.pool.ntp.org 1.asia.pool.ntp.org 2.asia.pool.ntp.org"
 		nvram set ntp_tdod="0"
 		nvram set ntp_updates="1"		
-		
-		echo -e $INFO Configuring dnsmasq_custom...
-		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
-		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
-		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
-		echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
-		echo "dhcp-lease-max=255" >> $dnsmasq
-		echo "dhcp-authoritative" >> $dnsmasq
-		echo >> $dnsmasq
 
 		rm -f /opt/etc/pdnsd.conf
 		cat > /opt/etc/pdnsd.conf <<-end
@@ -720,18 +720,7 @@ uptest= none;
 
 	PROCESS=$(ps | grep "ss-redir" | grep -v "grep")
 	if [ -z "$PROCESS" ]; then
-		rm -f /opt/etc/hosts
-		hosts=/opt/etc/hosts
-		nvram get wan_ipaddr > /opt/var/log/ipaddr.log		
-		echo "`nvram get lan_ipaddr` `nvram get wan_hostname`" >> $hosts
-		echo "`nvram get wan_ipaddr` wan1-ip" >> $hosts
-		echo "127.0.0.1 wan2-ip" >> $hosts
-		echo "127.0.0.1 wan3-ip" >> $hosts
-		echo "127.0.0.1 wan4-ip" >> $hosts
-		echo >> $hosts
-		chmod 755 $hosts
-		service dnsmasq stop && /opt/etc/init.d/S56dnsmasq start
-
+		mount -o bind /opt/sbin/dnsmasq /usr/sbin/dnsmasq && service dnsmasq restart
 		/opt/etc/init.d/S22shadowsocks start && touch /var/log/shadowsocks.lock
 #		/opt/etc/init.d/S23ss-tunnel start && touch /var/log/ss-tunnel.lock
 #		/opt/etc/init.d/S26pdnsd start && touch /var/log/pdnsd.lock
@@ -1038,13 +1027,13 @@ uptest= none;
 			$PREFIX/shadowsocks/shadowsocks flush
 			sleep 1
 			$PREFIX/shadowsocks/shadowsocks rules
-			/opt/etc/init.d/S56dnsmasq restart
+			service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start	
 		else
 			/opt/etc/init.d/S24chinadns restart
 			$PREFIX/shadowsocks/shadowsocks flush
 			sleep 1
 			$PREFIX/shadowsocks/shadowsocks rules
-			/opt/etc/init.d/S56dnsmasq restart
+			service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start	
 		fi
 	fi
 	echo -e -n "$ansi_white Updating chnroutes... "
@@ -1079,27 +1068,7 @@ uptest= none;
 		else
       			echo '['$DATE'] No problem, the normal operation of shadowsoks.' >> /var/log/shadowsocks_watchdog.log 2>&1
 		fi
-	fi
-		
-	oldipaddr=`sed -n '1p' /opt/var/log/ipaddr.log`
-	newipaddr=`nvram get wan_ipaddr`
-	if [ $(ps|grep async|grep -v grep|wc -l) -ge 1 ]; then
-		service dnsmasq stop
-		/opt/etc/init.d/S56dnsmasq start
-	else
-		if [ $oldipaddr != $newipaddr ];then
-			nvram get wan_ipaddr > /opt/var/log/ipaddr.log
-			rm -f /opt/etc/hosts
-			echo "`nvram get lan_ipaddr` `nvram get wan_hostname`" >> $hosts
-			echo "`nvram get wan_ipaddr` wan1-ip" >> $hosts
-			echo "127.0.0.1 wan2-ip" >> $hosts
-			echo "127.0.0.1 wan3-ip" >> $hosts
-			echo "127.0.0.1 wan4-ip" >> $hosts
-			echo >> $hosts
-			chmod 755 $hosts
-			service dnsmasq stop && /opt/etc/init.d/S56dnsmasq start
-		fi		
-	fi
+	fi		
 
 	dnscrypt=$(ps | grep "dnscrypt-proxy" | grep -v "grep")
 	if [ -f "/var/log/dnscrypt-proxy.lock" ]; then
@@ -1215,11 +1184,11 @@ uptest= none;
 	if [ "no" == $(ask_yes_or_no "Select GFWLIST?") ]; then
 		echo -e $INFO Switch CHNROUTES...		
 		$PREFIX/shadowsocks/shadowsocks run
-		/opt/etc/init.d/S56dnsmasq restart
+		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start	
 	else
 		echo -e $INFO Switch GFWLIST...
 		$PREFIX/shadowsocks/shadowsocks run
-		/opt/etc/init.d/S56dnsmasq restart
+		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 	fi
 	;;
 
@@ -1348,11 +1317,11 @@ Your Choice(Direct enter 0 is Restore Default):"
 		$PREFIX/shadowsocks/shadowsocks flush
 		sleep 2
 		$PREFIX/shadowsocks/shadowsocks rules
-		/opt/etc/init.d/S56dnsmasq restart
+		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 	else
 		echo -e $INFO Switch GFWLIST...
 		/opt/etc/init.d/S22shadowsocks restart
-		/opt/etc/init.d/S56dnsmasq restart
+		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 	fi
 	;;	
 
@@ -1679,7 +1648,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 				
 *)
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.3.16 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.3.18 $ansi_std"
 	echo -e "$ansi_green # Version: V5.0 (ARM final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
