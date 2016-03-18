@@ -3,7 +3,7 @@ Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com>
  
 Last edited: 2016.3.18
 
-Version: V5.0 (final version)
+Version: V5.0-1 (final version)
 
 Explain: This script can be used only for shibby Tomato firmware.
 
