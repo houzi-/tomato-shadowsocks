@@ -1,11 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> 
-# Last edited: 2016.3.18
-# Version: V5.0 (MIPS final version)
-# Explain: This script can be used only for shibby Tomato MIPS firmware.
-# Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
-# Description: This is a science on ShadowSocks Internet automatic configuration script in Tomato under.
+# Copyright (C) 2015-2016 Tomato shibby-shadowsocks  
+# Copyright (C) 2015-2016 Jason Lin <wojiaolinmu008@gmail.com>
 # --------------------------------------------------------------------------------------------------------
 # This is free software, licensed under the GNU General Public License v3.
 # See /LICENSE for more information.
@@ -472,7 +468,7 @@ uptest= none;
 
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
-		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nproxy-dnssec \ncache-size=10000" >> $dnsmasq
+		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nproxy-dnssec \nmin-cache-ttl=6000 \ncache-size=10000" >> $dnsmasq
 		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
 		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
 		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
@@ -543,7 +539,7 @@ uptest= none;
 
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
-		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nall-servers \nproxy-dnssec \ncache-size=10000" >> $dnsmasq
+		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nall-servers \nmin-cache-ttl=6000 \ncache-size=10000" >> $dnsmasq
 		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
 		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
 		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
@@ -620,7 +616,7 @@ uptest= none;
 
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
-		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \ncache-size=10000" >> $dnsmasq
+		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nmin-cache-ttl=6000 \ncache-size=10000" >> $dnsmasq
 		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
 		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
 		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
@@ -1155,12 +1151,12 @@ uptest= none;
 	fi
 
 	echo -e $INFO Please select $BOLD GFWLIST $NORM switch or switch $BOLD CHNROUTES $NORM? "\033[4m yes \033[0m"  or "\033[4m no \033[0m"
-	if [ "no" == $(ask_yes_or_no "Select GFWLIST?") ]; then
-		echo -e $INFO Switch CHNROUTES...		
+	if [ "yes" == $(ask_yes_or_no "Select GFWLIST?") ]; then
+		echo -e $INFO Switch GFWLIST...		
 		$PREFIX/shadowsocks/shadowsocks run
-		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
+		service dnsmasq restart
 	else
-		echo -e $INFO Switch GFWLIST...
+		echo -e $INFO Switch CHNROUTES...
 		$PREFIX/shadowsocks/shadowsocks run
 		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 	fi
@@ -1283,18 +1279,18 @@ Your Choice(Direct enter 0 is Restore Default):"
 	sed -i "/^#[ \t]\+iptables -t nat -A SS_SPEC_WAN_AC -d \`sed -n '1p' \/opt\/var\/log\/resolvip.txt\` -j RETURN/s/^#//" $PREFIX/shadowsocks/shadowsocks
 
 	echo -e $INFO Please select $BOLD GFWLIST $NORM switch or switch $BOLD CHNROUTES $NORM? "\033[4m yes \033[0m"  or "\033[4m no \033[0m"
-	if [ "no" == $(ask_yes_or_no "Select GFWLIST?") ]; then
+	if [ "yes" == $(ask_yes_or_no "Select GFWLIST?") ]; then
+		echo -e $INFO Switch GFWLIST...
+		/opt/etc/init.d/S22shadowsocks restart
+		service dnsmasq restart
+	else
 		echo -e $INFO Switch CHNROUTES...		
 		/opt/etc/init.d/S22shadowsocks restart
 #		/opt/etc/init.d/S23ss-tunnel restart
 		$PREFIX/shadowsocks/shadowsocks flush
 		sleep 2
 		$PREFIX/shadowsocks/shadowsocks rules
-		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
-	else
-		echo -e $INFO Switch GFWLIST...
-		/opt/etc/init.d/S22shadowsocks restart
-		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
+		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start		
 	fi
 	;;	
 
@@ -1666,13 +1662,14 @@ Your Choice(Direct enter 0 is Restore Default):"
 	;;
 				
 *)
+	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
 	echo -e "$ansi_green # Last edited: 2016.3.18 $ansi_std"
-	echo -e "$ansi_green # Version: V5.0 (MIPS final version) $ansi_std"
+	echo -e "$ansi_green # Version: V5.0-1 (MIPS final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
-	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic configuration script in Tomato under. $ansi_std"
-	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
+	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
+	echo -e "$ansi_green # configuration script in Tomato under$ansi_std. "
 	echo -e "$ansi_green # This is free software, licensed under the GNU General Public License v3. $ansi_std"
 	echo -e "$ansi_green # See /LICENSE for more information. $ansi_std"
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
