@@ -25,6 +25,9 @@ CONTENT="Your tools running over the wall!"
 # Target E-mail address
 TO=""
 
+# Adbyby ad filter
+adbyby_filter=0
+
 READ="\033[31;1m"
 BOLD="\033[42;1m"	
 NORM="\033[0m"
@@ -756,8 +759,16 @@ uptest= none;
 		IFNAME=$(nvram get lan_ifname &> /dev/null)
 		iptables -t nat -I OUTPUT 1 ${IFNAME:+-o $IFNAME} -p tcp -m multiport --dports 22,80,443 -j SS_SPEC_WAN_AC
 
-		if [ -f "$PREFIX/shadowsocks/safe.list" ];then
+		if [ -f "$PREFIX/shadowsocks/safe.list" ]; then
 			$PREFIX/shadowsocks/safe.sh
+		else
+			if [ "$adbyby_filter" == "1" ];then
+				/opt/etc/init.d/S30adm start
+#				ipset -A ss_spec_wan_ac 100.100.100.100/32
+				iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8118
+				iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8118
+			fi			
+		
 		fi
 		
 		iptables -t nat -L OUTPUT > /var/log/iptables.txt
@@ -881,6 +892,12 @@ uptest= none;
 	iptables -t nat -X SS_SPEC_WAN_FW &> /dev/null
 	ipset -X ss_spec_wan_ac &> /dev/null
 	ipset -X ss_spec_lan_ac &> /dev/null
+	
+	if [ "$adbyby_filter" == "1" ];then
+		iptables -t nat -D PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8118 &> /dev/null
+		iptables -t nat -D PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8118 &> /dev/null
+	fi
+	
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"
 	;;
@@ -1664,8 +1681,8 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.3.18 $ansi_std"
-	echo -e "$ansi_green # Version: V5.0-1 (MIPS final version) $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.3.25 $ansi_std"
+	echo -e "$ansi_green # Version: V5.0-2 (MIPS final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"

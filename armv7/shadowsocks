@@ -917,8 +917,8 @@ uptest= none;
 	fi
 	
 	if [ "$adm_filter" == "1" ]; then
-		iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 18309 &> /dev/null
-		iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 18309 &> /dev/null
+		iptables -t nat -D PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 18309 &> /dev/null
+		iptables -t nat -D PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 18309 &> /dev/null
 	fi	
 	
 	sleep 1
