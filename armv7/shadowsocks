@@ -28,6 +28,9 @@ TO=""
 # XIAOMI Fan Mode
 xiaomi_fan=0
 
+# ADM ad filter
+adm_filter=0
+
 READ="\033[31;1m"
 BOLD="\033[42;1m"	
 NORM="\033[0m"
@@ -690,7 +693,7 @@ uptest= none;
 		killall shadowsocks > /dev/null
 	fi
 
-	if [ "$xiaomi_fan" == "1" ];then
+	if [ "$xiaomi_fan" == "1" ]; then
 		echo -e -n "$ansi_white Setting XIAOMI Fan Mode... "
 		nvram set sch_c4="1,1439,127"
 		nvram set sch_c4_cmd="shadowsocks temp_s"
@@ -790,9 +793,16 @@ uptest= none;
 #		iptables -t mangle -A SS_SPEC_TPROXY -p udp -m set ! --match-set ss_spec_wan_ac dst -j TPROXY --on-port $PORT --tproxy-mark 0x01/0x01 
 #		iptables -t mangle -A PREROUTING -p udp -m multiport --dports 22,80,443 -m set ! --match-set ss_spec_lan_ac src -j SS_SPEC_TPROXY 
 
-		if [ -f "$PREFIX/shadowsocks/safe.list" ];then
+		if [ -f "$PREFIX/shadowsocks/safe.list" ]; then
 			safelist=$PREFIX/shadowsocks/safe.list
 			sed -e "s/^/-A ss_spec_lan_ac &/g" -e "1 i\-N ss_spec_lan_ac hash:net " $safelist | ipset -R -!
+		else
+			if [ "$adm_filter" == "1" ];then
+				/opt/etc/init.d/S30adm start
+				ipset -A ss_spec_wan_ac 188.188.188.188/32
+				iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 18309
+#				iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 18309
+			fi			
 		fi	
 
 		while :
@@ -800,7 +810,7 @@ uptest= none;
 			iptables -t nat -L OUTPUT > /var/log/iptables.txt
 			I=`cat /var/log/iptables.txt|grep -c multiport`
 	
-			if [ $I -ge 2 ];then
+			if [ $I -ge 2 ]; then
 				echo "same" >> /var/log/rules.log
 				$PREFIX/shadowsocks/shadowsocks flush
 				iptables -t nat -A SS_SPEC_WAN_AC -d $SS -j RETURN
@@ -827,7 +837,7 @@ uptest= none;
 		echo "$(date): start gfwlist" >> /var/log/gfwlist.log 
 	fi
 
-	if [ -f "/var/log/ipset.lock" ];then
+	if [ -f "/var/log/ipset.lock" ]; then
 		echo -e $INFO EXIT
 	else
 		echo "gfw_rules same" > /var/log/rules.log 
@@ -857,7 +867,7 @@ uptest= none;
 		rm -f $PREFIX/shadowsocks/lan.list
 	fi
 
-	if [ -f "$PREFIX/shadowsocks/safe.list" ];then
+	if [ -f "$PREFIX/shadowsocks/safe.list" ]; then
 		safelist=$PREFIX/shadowsocks/safe.list
 		sed -e "s/^/-A ss_spec_lan_ac &/g" -e "1 i\-N ss_spec_lan_ac hash:net " $safelist | ipset -R -!
 	fi
@@ -905,6 +915,12 @@ uptest= none;
 		ipset destroy ss_spec_wan_ac &> /dev/null
 		ipset destroy ss_spec_lan_ac &> /dev/null
 	fi
+	
+	if [ "$adm_filter" == "1" ]; then
+		iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 18309 &> /dev/null
+		iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 18309 &> /dev/null
+	fi	
+	
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"
 	;;
@@ -1646,7 +1662,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.3.18 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.3.25 $ansi_std"
 	echo -e "$ansi_green # Version: V5.0-1 (MIPS final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
