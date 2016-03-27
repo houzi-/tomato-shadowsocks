@@ -140,7 +140,7 @@ case ${1} in
 
 	BIN=/opt/bin
 	SBIN=/opt/sbin	
-	echo -e "chinadns \nPcap_DNSProxy \nss-redir \nresolvip \npdnsd-ctl \ndiff \ndnscrypt-proxy \ncurl" > /var/log/find.txt
+	echo -e "chinadns \ncurl \ndiff \ndnscrypt-proxy \nPcap_DNSProxy \npdnsd-ctl \nresolvip \nss-redir" > /var/log/find.txt
 	cd $BIN
 	if [ ! -f chinadns -o ! -f Pcap_DNSProxy -o ! -f ss-redir -o ! -f resolvip -o ! -f pdnsd-ctl -o ! -f diff -o ! -f dnscrypt-proxy -o ! -f curl ]; then	
 		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy curl > /var/log/find_N.txt
@@ -283,6 +283,8 @@ Your Choice:"
 		echo "dhcp-authoritative" >> $dnsmasq
 		echo >> $dnsmasq
 
+		service dnsmasq restart
+		
 		$PREFIX/shadowsocks/shadowsocks run
 		touch /var/log/ipset.lock
 		$PREFIX/shadowsocks/shadowsocks ipset
@@ -763,10 +765,10 @@ uptest= none;
 			$PREFIX/shadowsocks/safe.sh
 		else
 			if [ "$adbyby_filter" == "1" ];then
-				/opt/etc/init.d/S30adm start
+				/opt/etc/init.d/S30adbyby start && touch /var/log/adbyby.lock
 #				ipset -A ss_spec_wan_ac 100.100.100.100/32
 				iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8118
-				iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8118
+#				iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8118
 			fi			
 		
 		fi
@@ -1057,6 +1059,15 @@ uptest= none;
 		fi
 	fi
 
+	if [ -f "/var/log/adbyby.lock" ]; then
+		if [ $(ps|grep adbyby|grep -v grep|wc -l) -gt 1 ]; then
+			echo '['$DATE'] No problem, the normal operation of adbyby.' >> /var/log/adbyby.log 2>&1
+		else
+			echo '['$DATE'] adbyby abnormal operation, restarting adbyby.' >> /var/log/adbyby.log 2>&1
+			/opt/etc/init.d/S30adbyby start
+		fi
+	fi
+	
 	dnscrypt=$(ps | grep "dnscrypt-proxy" | grep -v "grep")
 	if [ -f "/var/log/dnscrypt-proxy.lock" ]; then
 		if [ -z "$dnscrypt" ]; then
@@ -1681,8 +1692,8 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.3.25 $ansi_std"
-	echo -e "$ansi_green # Version: V5.0-2 (MIPS final version) $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.3.27 $ansi_std"
+	echo -e "$ansi_green # Version: V5.0-3 (MIPS final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
