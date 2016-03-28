@@ -275,6 +275,7 @@ Your Choice:"
 #		sed -r 's/#(['$'\t'' ]*PLAN=Pcap_DNSProxy)/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 
 		echo -e $INFO Configuring dnsmasq_custom...
+		echo > $dnsmasq	
 		echo "min-cache-ttl=600" >> $dnsmasq
 		echo "cache-size=10000" >> $dnsmasq		
 		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
@@ -291,6 +292,7 @@ Your Choice:"
 		echo "dhcp-lease-max=255" >> $dnsmasq
 		echo "dhcp-authoritative" >> $dnsmasq
 		echo >> $dnsmasq
+		sed -i '1d' $dnsmasq		
 
 		service dnsmasq restart
 		
@@ -408,6 +410,7 @@ uptest= none;
 
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
+		echo > $dnsmasq		
 		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nmin-cache-ttl=600 \ncache-size=10000" >> $dnsmasq
 		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
 		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
@@ -423,6 +426,7 @@ uptest= none;
 		echo "dhcp-lease-max=255" >> $dnsmasq
 		echo "dhcp-authoritative" >> $dnsmasq
 		echo >> $dnsmasq
+		sed -i '1d' $dnsmasq		
 
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
@@ -489,6 +493,7 @@ uptest= none;
 
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
+		echo > $dnsmasq		
 		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nproxy-dnssec \nmin-cache-ttl=6000 \ncache-size=10000" >> $dnsmasq
 		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
 		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
@@ -504,6 +509,7 @@ uptest= none;
 		echo "dhcp-lease-max=255" >> $dnsmasq
 		echo "dhcp-authoritative" >> $dnsmasq
 		echo >> $dnsmasq
+		sed -i '1d' $dnsmasq		
 
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
@@ -567,6 +573,7 @@ uptest= none;
 
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
+		echo > $dnsmasq		
 		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nall-servers \nmin-cache-ttl=6000 \ncache-size=10000" >> $dnsmasq
 		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
 		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
@@ -582,6 +589,7 @@ uptest= none;
 		echo "dhcp-lease-max=255" >> $dnsmasq
 		echo "dhcp-authoritative" >> $dnsmasq
 		echo >> $dnsmasq
+		sed -i '1d' $dnsmasq		
 			
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
@@ -651,6 +659,7 @@ uptest= none;
 
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
+		echo > $dnsmasq		
 		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nmin-cache-ttl=6000 \ncache-size=10000" >> $dnsmasq
 		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
 		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
@@ -666,6 +675,7 @@ uptest= none;
 		echo "dhcp-lease-max=255" >> $dnsmasq
 		echo "dhcp-authoritative" >> $dnsmasq
 		echo >> $dnsmasq
+		sed -i '1d' $dnsmasq		
 			
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
