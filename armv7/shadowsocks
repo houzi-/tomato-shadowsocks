@@ -292,7 +292,16 @@ Your Choice:"
 #		sed -r 's/#(['$'\t'' ]*PLAN=Pcap_DNSProxy)/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 
 		echo -e $INFO Configuring dnsmasq_custom...
+		echo "min-cache-ttl=600" >> $dnsmasq
+		echo "cache-size=10000" >> $dnsmasq
 		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
+		echo "addn-hosts=/etc/dnsmasq/hosts" >> $dnsmasq
+		echo "dhcp-hostsfile=/etc/dnsmasq/dhcp" >> $dnsmasq
+		echo "expand-hosts" >> $dnsmasq
+		echo "min-port=4096" >> $dnsmasq
+		echo "stop-dns-rebind" >> $dnsmasq
+		echo "rebind-localhost-ok" >> $dnsmasq		
 		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
 		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
 		echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
@@ -416,8 +425,15 @@ uptest= none;
 
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
-		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \ncache-size=10000" >> $dnsmasq
+		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nmin-cache-ttl=600 \ncache-size=10000" >> $dnsmasq
 		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
+		echo "addn-hosts=/etc/dnsmasq/hosts" >> $dnsmasq
+		echo "dhcp-hostsfile=/etc/dnsmasq/dhcp" >> $dnsmasq
+		echo "expand-hosts" >> $dnsmasq
+		echo "min-port=4096" >> $dnsmasq
+		echo "stop-dns-rebind" >> $dnsmasq
+		echo "rebind-localhost-ok" >> $dnsmasq			
 		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
 		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
 		echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
@@ -492,6 +508,13 @@ uptest= none;
 		sleep 1
 		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nproxy-dnssec \nmin-cache-ttl=6000 \ncache-size=10000" >> $dnsmasq
 		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
+		echo "addn-hosts=/etc/dnsmasq/hosts" >> $dnsmasq
+		echo "dhcp-hostsfile=/etc/dnsmasq/dhcp" >> $dnsmasq
+		echo "expand-hosts" >> $dnsmasq
+		echo "min-port=4096" >> $dnsmasq
+		echo "stop-dns-rebind" >> $dnsmasq
+		echo "rebind-localhost-ok" >> $dnsmasq		
 		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
 		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
 		echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
@@ -563,6 +586,13 @@ uptest= none;
 		sleep 1
 		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nall-servers \nmin-cache-ttl=6000 \ncache-size=10000" >> $dnsmasq
 		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
+		echo "addn-hosts=/etc/dnsmasq/hosts" >> $dnsmasq
+		echo "dhcp-hostsfile=/etc/dnsmasq/dhcp" >> $dnsmasq
+		echo "expand-hosts" >> $dnsmasq
+		echo "min-port=4096" >> $dnsmasq
+		echo "stop-dns-rebind" >> $dnsmasq
+		echo "rebind-localhost-ok" >> $dnsmasq		
 		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
 		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
 		echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
@@ -640,6 +670,13 @@ uptest= none;
 		sleep 1
 		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nmin-cache-ttl=6000 \ncache-size=10000" >> $dnsmasq
 		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
+		echo "addn-hosts=/etc/dnsmasq/hosts" >> $dnsmasq
+		echo "dhcp-hostsfile=/etc/dnsmasq/dhcp" >> $dnsmasq
+		echo "expand-hosts" >> $dnsmasq
+		echo "min-port=4096" >> $dnsmasq
+		echo "stop-dns-rebind" >> $dnsmasq
+		echo "rebind-localhost-ok" >> $dnsmasq		
 		echo "interface=`nvram get lan_ifname`" >> $dnsmasq
 		echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
 		echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
@@ -759,9 +796,6 @@ uptest= none;
 
 "rules" )
 	_input=$PREFIX/shadowsocks/ignore.list
-
-	ipset -N ss_spec_lan_ac hash:net
-	sed -e "s/^/-A ss_spec_wan_ac &/g" -e "1 i\-N ss_spec_wan_ac hash:net " $_input | ipset -R -!
 	
 	sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks.json  > $PREFIX/opt/var/log/server.txt	
 	SS=`sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks.json`
@@ -769,6 +803,9 @@ uptest= none;
 	PORT=`sed -n '1p' /opt/var/log/local_port.txt`	
 
 	if [ -f "$PREFIX/shadowsocks/ignore.list" ]; then
+		ipset -N ss_spec_lan_ac hash:net
+		sed -e "s/^/-A ss_spec_wan_ac &/g" -e "1 i\-N ss_spec_wan_ac hash:net " $_input | ipset -R -!	
+	
 		iptables -t nat -N SS_SPEC_WAN_AC
 		iptables -t nat -N SS_SPEC_WAN_FW
 		iptables -t nat -A SS_SPEC_WAN_AC -d $SS -j RETURN
@@ -797,15 +834,15 @@ uptest= none;
 
 		if [ -f "$PREFIX/shadowsocks/safe.list" ]; then
 			safelist=$PREFIX/shadowsocks/safe.list
-			sed -e "s/^/-A ss_spec_lan_ac &/g" -e "1 i\-N ss_spec_lan_ac hash:net " $safelist | ipset -R -!
-		else
-			if [ "$adm_filter" == "1" ];then
-				/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
-				ipset -A ss_spec_wan_ac 188.188.188.188/32
-				iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 18309
-#				iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 18309
-			fi			
-		fi	
+			sed -e "s/^/-A ss_spec_lan_ac &/g" -e "1 i\-N ss_spec_lan_ac hash:net " $safelist | ipset -R -!		
+		fi
+
+		if [ "$adm_filter" == "1" ];then
+			/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
+			ipset -A ss_spec_wan_ac 188.188.188.188/32
+			iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 18309
+#			iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 18309
+		fi			
 
 		while :
 		do
@@ -835,6 +872,14 @@ uptest= none;
 		ipset -N gfw_black_list hash:ip
 		iptables -t nat -A PREROUTING -p tcp -m set --match-set gfw_black_list dst -j REDIRECT --to-port $PORT
 		iptables -t nat -A OUTPUT -p tcp -m set --match-set gfw_black_list dst -j REDIRECT --to-port $PORT
+		
+		if [ "$adm_filter" == "1" ];then
+			/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
+			ipset -A ss_spec_wan_ac 188.188.188.188/32
+			iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 18309
+#			iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 18309
+		fi			
+		
 		rm -f /var/log/chnroutes.log
 		echo "$(date): start gfwlist" >> /var/log/gfwlist.log 
 	fi
@@ -847,7 +892,8 @@ uptest= none;
 		sed 's/^[ \t]\+//;s/[ \t].*//' /var/log/set_up.txt > /var/log/PID.TXT
 		IPSET=`sed -n '1p' /var/log/PID.TXT`
 		kill $IPSET
-	fi
+	fi	
+	
 	echo -e -n "$ansi_white Loading iptables rules... "
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"
@@ -1070,7 +1116,7 @@ uptest= none;
 	sed -i "s|^\(ipset.*\)/[^/]*$|\1/gfw_black_list|" $PREFIX/shadowsocks/dnsmasq.d/gfwlist.conf
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"
-	/opt/etc/init.d/S56dnsmasq restart
+	service dnsmasq restart
 	;;
 	
 "check" )
@@ -1646,13 +1692,20 @@ Your Choice(Direct enter 0 is Restore Default):"
 	nvram commit
 
 	rm -f /opt/etc/dnsmasq.conf
+	echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
+	echo "addn-hosts=/etc/dnsmasq/hosts" >> $dnsmasq
+	echo "dhcp-hostsfile=/etc/dnsmasq/dhcp" >> $dnsmasq
+	echo "expand-hosts" >> $dnsmasq
+	echo "min-port=4096" >> $dnsmasq
+	echo "stop-dns-rebind" >> $dnsmasq
+	echo "rebind-localhost-ok" >> $dnsmasq
 	echo "interface=`nvram get lan_ifname`" >> $dnsmasq
 	echo "dhcp-range=tag:`nvram get lan_ifname`,`nvram get dhcpd_startip`,`nvram get dhcpd_endip`,255.255.255.0,1440m" >> $dnsmasq
 	echo "dhcp-option=tag:`nvram get lan_ifname`,3,`nvram get lan_ipaddr`" >> $dnsmasq
 	echo "dhcp-lease-max=255" >> $dnsmasq
 	echo "dhcp-authoritative" >> $dnsmasq
 	echo >> $dnsmasq	
-	/opt/etc/init.d/S56dnsmasq restart
+	service dnsmasq restart
 
 	echo -e $INFO OK!	
 	;;											 
@@ -1673,8 +1726,8 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.3.27 $ansi_std"
-	echo -e "$ansi_green # Version: V5.0-3 (ARM final version) $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.3.28 $ansi_std"
+	echo -e "$ansi_green # Version: V5.0-4 (ARM final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
