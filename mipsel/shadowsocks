@@ -259,19 +259,6 @@ case ${1} in
 		rm -f /opt/etc/shadowsocks.json
   		exit 0 
 	fi
-
-	if [ ! -f "/var/log/xiaomi_fan.lock" ]; then	
-		if [ "$xiaomi_fan" == "1" ]; then
-			echo -e -n "$ansi_white Setting XIAOMI Fan Mode... "
-			touch /var/log/xiaomi_fan.lock
-			nvram set fanctrl_dutycycle=2
-			nvram commit
-			shadowsocks temp
-			sleep 1
-			echo -e "            $ansi_green done. $ansi_std"	
-		fi
-	fi
-	echo -e "$BOLD Set successfully, please reboot the router. $NORM"	
 	
 echo -e $INFO "Please select Please choose the following programs:\n\
 $BOLD##programs_1##:$NORM (ss-redir+gfwlist+pdnsd)\n\
@@ -371,17 +358,8 @@ uptest= none;
 		nvram set script_wanup="$SCR"
 		nvram commit
 
-		echo "#!/bin/sh" >> $CHECK/cron.5mins/clear_log.sh
-		echo >> $CHECK/cron.5mins/clear_log.sh		
-		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log" > $CHECK/cron.5mins/clear_log.sh
-		echo >> $CHECK/cron.5mins/clear_log.sh
-		chmod +x $CHECK/cron.5mins/clear_log.sh		
-		echo "#!/bin/sh" >> $CHECK/cron.1min/check.sh
-		echo >> $CHECK/check.sh
-		echo "shadowsocks check" >> $CHECK/cron.1min/check.sh
-		echo "shadowsocks check_rules" >> $CHECK/cron.1min/check.sh		
-		echo >> $CHECK/cron.1min/check.sh
-		chmod +x $CHECK/cron.1min/check.sh
+		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh
 
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
@@ -482,17 +460,8 @@ uptest= none;
 		nvram set script_wanup="$SCR"
 		nvram commit	
 
-		echo "#!/bin/sh" >> $CHECK/cron.5mins/clear_log.sh
-		echo >> $CHECK/cron.5mins/clear_log.sh
-		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log" > $CHECK/cron.5mins/clear_log.sh
-		echo >> $CHECK/cron.5mins/clear_log.sh
-		chmod +x $CHECK/cron.5mins/clear_log.sh
-		echo "#!/bin/sh" >> $CHECK/cron.1min/check.sh
-		echo >> $CHECK/cron.1min/check.sh
-		echo "shadowsocks check" >> $CHECK/cron.1min/check.sh
-		echo "shadowsocks check_rules" >> $CHECK/cron.1min/check.sh		
-		echo >> $CHECK/cron.1min/check.sh
-		chmod +x $CHECK/cron.1min/check.sh
+		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh	
 
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
@@ -569,17 +538,8 @@ uptest= none;
 		nvram set script_wanup="$SCR"
 		nvram commit
 
-		echo "#!/bin/sh" >> $CHECK/cron.5mins/clear_log.sh
-		echo >> $CHECK/cron.5mins/clear_log.sh		
-		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/dnscrypt-proxy_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log" > $CHECK/cron.5mins/clear_log.sh
-		echo >> $CHECK/cron.5mins/clear_log.sh		
-		chmod +x $CHECK/cron.5mins/clear_log.sh
-		echo "#!/bin/sh" >> $CHECK/cron.1min/check.sh
-		echo >> $CHECK/cron.1min/check.sh
-		echo "shadowsocks check" >> $CHECK/cron.1min/check.sh
-		echo "shadowsocks check_rules" >> $CHECK/cron.1min/check.sh		
-		echo >> $CHECK/cron.1min/check.sh
-		chmod +x $CHECK/cron.1min/check.sh
+		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/dnscrypt-proxy_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh
 
 		/opt/etc/init.d/S29dnscrypt-proxy start
 		rm -f $PREFIX/shadowsocks/update.lock
@@ -654,16 +614,8 @@ uptest= none;
 		nvram set script_wanup="$SCR"
 		nvram commit
 
-		echo "#!/bin/sh" >> $CHECK/cron.5mins/clear_log.sh
-		echo >> $CHECK/cron.5mins/clear_log.sh		
-		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/Pcap_DNSProxy_watchdog.log" > $CHECK/cron.5mins/clear_log.sh
-		chmod +x $CHECK/cron.5mins/clear_log.sh
-		echo "#!/bin/sh" >> $CHECK/cron.1min/check.sh
-		echo >> $CHECK/cron.1min/check.sh
-		echo "shadowsocks check" >> $CHECK/cron.1min/check.sh
-		echo "shadowsocks check_rules" >> $CHECK/cron.1min/check.sh		
-		echo >> $CHECK/cron.1min/check.sh
-		chmod +x $CHECK/cron.1min/check.sh	
+		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/Pcap_DNSProxy_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh	
 
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
@@ -742,16 +694,8 @@ uptest= none;
 		nvram set script_wanup="$SCR"
 		nvram commit
 
-		echo "#!/bin/sh" >> $CHECK/cron.5mins/clear_log.sh
-		echo >> $CHECK/cron.5mins/clear_log.sh		
-		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/chinadns.log" > $CHECK/cron.5mins/clear_log.sh
-		chmod +x $CHECK/cron.5mins/clear_log.sh
-		echo "#!/bin/sh" >> $CHECK/cron.1min/check.sh
-		echo >> $CHECK/cron.1min/check.sh
-		echo "shadowsocks check" >> $CHECK/cron.1min/check.sh
-		echo "shadowsocks check_rules" >> $CHECK/cron.1min/check.sh		
-		echo >> $CHECK/cron.1min/check.sh
-		chmod +x $CHECK/cron.1min/check.sh
+		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/chinadns.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh
 			
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
