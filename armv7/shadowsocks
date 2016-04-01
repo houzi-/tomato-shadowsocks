@@ -9,7 +9,7 @@
 #
 
 # Debug 
-#set -x
+set -x
 # SMTP server (EP:"smtp.gmail.com")
 SMTP="smtp.163.com"
 # Send E-mail Username
@@ -64,6 +64,9 @@ DATE=$(date "+%Y-%m-%d %H:%M:%S")
 # Configure dnsmasq
 dnsmasq=/opt/etc/dnsmasq.conf
 
+# Schduler
+CHECK=/opt/etc
+
 case ${1} in
 
 "set_up" ) 
@@ -81,7 +84,7 @@ case ${1} in
 			cp /tmp/shadowsocks $PREFIX/shadowsocks
 			mount -o bind $PREFIX/opt /opt
 			cd /opt && wget -O - http://pkg.entware.net/binaries/armv7/installer/entware_install.sh | sh
-			cd /tmp && opkg install china* pdnsd* pcap* reso* shadow* diff* dnscr* dnsma*	
+			cd /tmp && opkg install --force-checksum china* pdnsd* pcap* reso* shadow* diff* dnscr* dnsma* cron*	
 			echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
 			sleep 5
 			ln -s $PREFIX/shadowsocks/shadowsocks /opt/bin		
@@ -123,7 +126,7 @@ case ${1} in
 		echo -e -n $SHADOWSOCKS
 		sleep 1
 		echo -e "$ansi_red ERROR. $ansi_std"
-		rm -rf PREFIX/*
+		rm -rf $PREFIX/*
 		echo -e $WARNING $BOLD"Please install the SHADOWSOCKS script."$NORM 
 		exit 0		
 	fi
@@ -132,7 +135,7 @@ case ${1} in
 		echo -e -n $MOUNT
 		sleep 1
 		echo -e "$ansi_red ERROR. $ansi_std"
-		rm -rf PREFIX/*
+		rm -rf $PREFIX/*
 		echo -e $WARNING $BOLD"OPT directory does not mount."$NORM 
 		exit 0
 	else
@@ -143,12 +146,12 @@ case ${1} in
 
 	BIN=/opt/bin
 	SBIN=/opt/sbin
-	echo -e "chinadns \ndiff \ndnscrypt-proxy \nPcap_DNSProxy \npdnsd-ctl \nresolvip \nss-redir" > /var/log/find.txt	
+	echo -e "Pcap_DNSProxy \nchinadns \ncrontab \ndiff \ndnscrypt-proxy \npdnsd-ctl \nresolvip \nss-redir" > /var/log/find.txt	
 	cd $BIN
 	if [ ! -f chinadns -o ! -f Pcap_DNSProxy -o ! -f ss-redir -o ! -f resolvip -o ! -f pdnsd-ctl -o ! -f diff -o ! -f dnscrypt-proxy ]; then	
-		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy > /var/log/find_N.txt
+		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy crontab > /var/log/find_N.txt
 	else
-		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy > /var/log/find_N.txt
+		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy crontab > /var/log/find_N.txt
 	fi
 
 	find $SBIN/dnsmasq &> /dev/null;echo $? > /var/log/sbin.txt
@@ -162,12 +165,12 @@ case ${1} in
 		sleep 1
 		echo -e "$ansi_red ERROR. $ansi_std"
 		echo -e "$WARNING \n$BOLD Please install the following software:"$NORM
-		rm -rf PREFIX/*
+		rm -rf $PREFIX/*
 		echo -e $ansi_white"dnsmasq-full"$ansi_std
 		exit 0
 	fi				 
 
-	find chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy &> /dev/null;echo $? > /var/log/diff.txt;cd /
+	find chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy crontab &> /dev/null;echo $? > /var/log/diff.txt;cd /
 	DIFF=`sed -n '1p' /var/log/diff.txt`
 	diff -w /var/log/find.txt /var/log/find_N.txt | grep \^\< > /var/log/diff_show.txt
 	if [ "$DIFF" == "0" ]; then
@@ -175,12 +178,12 @@ case ${1} in
 		sleep 1 
 		echo -e "$ansi_green PASS. $ansi_std"
 	else
-		if [ ! -e $BIN/chinadns -a ! -e $BIN/diff -a ! -e $BIN/Pcap_DNSProxy -a ! -e $BIN/pdnsd-ctl -a ! -e $BIN/resolvip -a ! -e $BIN/ss-redir -a ! -e $BIN/dnscrypt-proxy ]; then
+		if [ ! -e $BIN/chinadns -a ! -e $BIN/crontab -a ! -e $BIN/diff -a ! -e $BIN/Pcap_DNSProxy -a ! -e $BIN/pdnsd-ctl -a ! -e $BIN/resolvip -a ! -e $BIN/ss-redir -a ! -e $BIN/dnscrypt-proxy ]; then
 			echo -e $DEPENDENCE
 			sleep 1
 			echo -e "$ansi_red ERROR. $ansi_std"
 			echo -e "$WARNING \n$BOLD Please install the following software:"$NORM
-			rm -rf PREFIX/*
+			rm -rf $PREFIX/*
 			echo -e $ansi_white"shadowsocks-libev \nchinadns \npdnsd \npcap-dnsproxy \nresolvip \ndiffutils \ndnscrypt-proxy"$ansi_std
 			exit 0
 		else	
@@ -188,7 +191,7 @@ case ${1} in
 			sleep 1
 			echo -e "$ansi_red ERROR. $ansi_std"
 			echo -e "$WARNING \n$BOLD Please install the following software:"$NORM
-			rm -rf PREFIX/*
+			rm -rf $PREFIX/*
 			cat /var/log/diff_show.txt
 			exit 0
 		fi
@@ -260,6 +263,19 @@ case ${1} in
   		exit 0 
 	fi
 
+	if [ ! -f "/var/log/xiaomi_fan.lock" ]; then	
+		if [ "$xiaomi_fan" == "1" ]; then
+			echo -e -n "$ansi_white Setting XIAOMI Fan Mode... "
+			touch /var/log/xiaomi_fan.lock
+			nvram set fanctrl_dutycycle=2
+			nvram commit
+			shadowsocks temp
+			sleep 1
+			echo -e "            $ansi_green done. $ansi_std"	
+		fi
+	fi
+	echo -e "$BOLD Set successfully, please reboot the router. $NORM"	
+	
 #	echo -e $INFO enable udprelay mode? "\033[4m yes \033[0m"  or "\033[4m no \033[0m"
 #	if [ "yes" == $(ask_yes_or_no "enable udprelay?") ]; then
 #		echo -e $INFO enable udprelay...
@@ -372,13 +388,17 @@ uptest= none;
 		nvram set script_wanup="$SCR"
 		nvram commit
 
-		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log" > /var/log/sch_c.txt
-		SCH=`sed -e '' /var/log/sch_c.txt`
-		nvram set sch_c1_cmd="shadowsocks check"
-		nvram set sch_c2_cmd="$SCH"
-		nvram set sch_c1="1,-1,127"
-		nvram set sch_c2="1,-30,127"
-		nvram commit
+		echo "#!/bin/sh" >> $CHECK/cron.5mins/clear_log.sh
+		echo >> $CHECK/cron.5mins/clear_log.sh		
+		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log" > $CHECK/cron.5mins/clear_log.sh
+		echo >> $CHECK/cron.5mins/clear_log.sh
+		chmod +x $CHECK/cron.5mins/clear_log.sh		
+		echo "#!/bin/sh" >> $CHECK/cron.1min/check.sh
+		echo >> $CHECK/check.sh
+		echo "shadowsocks check" >> $CHECK/cron.1min/check.sh
+		echo "shadowsocks check_rules" >> $CHECK/cron.1min/check.sh		
+		echo >> $CHECK/cron.1min/check.sh
+		chmod +x $CHECK/cron.1min/check.sh		
 
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
@@ -479,13 +499,17 @@ uptest= none;
 		nvram set script_wanup="$SCR"
 		nvram commit
 
-		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log" > /var/log/sch_c.txt
-		SCH=`sed -e '' /var/log/sch_c.txt`
-		nvram set sch_c1_cmd="shadowsocks check"
-		nvram set sch_c2_cmd="$SCH"
-		nvram set sch_c1="1,-1,127"
-		nvram set sch_c2="1,-30,127"
-		nvram commit
+		echo "#!/bin/sh" >> $CHECK/cron.5mins/clear_log.sh
+		echo >> $CHECK/cron.5mins/clear_log.sh
+		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log" > $CHECK/cron.5mins/clear_log.sh
+		echo >> $CHECK/cron.5mins/clear_log.sh
+		chmod +x $CHECK/cron.5mins/clear_log.sh
+		echo "#!/bin/sh" >> $CHECK/cron.1min/check.sh
+		echo >> $CHECK/cron.1min/check.sh
+		echo "shadowsocks check" >> $CHECK/cron.1min/check.sh
+		echo "shadowsocks check_rules" >> $CHECK/cron.1min/check.sh		
+		echo >> $CHECK/cron.1min/check.sh
+		chmod +x $CHECK/cron.1min/check.sh
 
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
@@ -562,13 +586,17 @@ uptest= none;
 		nvram set script_wanup="$SCR"
 		nvram commit
 
-		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/dnscrypt-proxy_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log" > /var/log/sch_c.txt
-		SCH=`sed -e '' /var/log/sch_c.txt`
-		nvram set sch_c1_cmd="shadowsocks check"
-		nvram set sch_c2_cmd="$SCH"
-		nvram set sch_c1="1,-1,127"
-		nvram set sch_c2="1,-30,127"
-		nvram commit
+		echo "#!/bin/sh" >> $CHECK/cron.5mins/clear_log.sh
+		echo >> $CHECK/cron.5mins/clear_log.sh		
+		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/dnscrypt-proxy_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log" > $CHECK/cron.5mins/clear_log.sh
+		echo >> $CHECK/cron.5mins/clear_log.sh		
+		chmod +x $CHECK/cron.5mins/clear_log.sh
+		echo "#!/bin/sh" >> $CHECK/cron.1min/check.sh
+		echo >> $CHECK/cron.1min/check.sh
+		echo "shadowsocks check" >> $CHECK/cron.1min/check.sh
+		echo "shadowsocks check_rules" >> $CHECK/cron.1min/check.sh		
+		echo >> $CHECK/cron.1min/check.sh
+		chmod +x $CHECK/cron.1min/check.sh		
 
 		/opt/etc/init.d/S29dnscrypt-proxy start
 		rm -f $PREFIX/shadowsocks/update.lock
@@ -643,14 +671,17 @@ uptest= none;
 		nvram set script_wanup="$SCR"
 		nvram commit
 
-		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/Pcap_DNSProxy_watchdog.log" > /var/log/sch_c.txt
-		SCH=`sed -e '' /var/log/sch_c.txt`
-		nvram set sch_c1_cmd="shadowsocks check"
-		nvram set sch_c2_cmd="$SCH"
-		nvram set sch_c1="1,-1,127"
-		nvram set sch_c2="1,-30,127"
-		nvram commit
-
+		echo "#!/bin/sh" >> $CHECK/cron.5mins/clear_log.sh
+		echo >> $CHECK/cron.5mins/clear_log.sh		
+		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/Pcap_DNSProxy_watchdog.log" > $CHECK/cron.5mins/clear_log.sh
+		chmod +x $CHECK/cron.5mins/clear_log.sh
+		echo "#!/bin/sh" >> $CHECK/cron.1min/check.sh
+		echo >> $CHECK/cron.1min/check.sh
+		echo "shadowsocks check" >> $CHECK/cron.1min/check.sh
+		echo "shadowsocks check_rules" >> $CHECK/cron.1min/check.sh		
+		echo >> $CHECK/cron.1min/check.sh
+		chmod +x $CHECK/cron.1min/check.sh			
+		
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
@@ -728,31 +759,22 @@ uptest= none;
 		nvram set script_wanup="$SCR"
 		nvram commit
 
-		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/chinadns.log" > /var/log/sch_c.txt
-		SCH=`sed -e '' /var/log/sch_c.txt`
-		nvram set sch_c1_cmd="shadowsocks check"
-		nvram set sch_c2_cmd="$SCH"
-		nvram set sch_c1="1,-1,127"
-		nvram set sch_c2="1,-30,127"
-		nvram commit
+		echo "#!/bin/sh" >> $CHECK/cron.5mins/clear_log.sh
+		echo >> $CHECK/cron.5mins/clear_log.sh		
+		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/chinadns.log" > $CHECK/cron.5mins/clear_log.sh
+		chmod +x $CHECK/cron.5mins/clear_log.sh
+		echo "#!/bin/sh" >> $CHECK/cron.1min/check.sh
+		echo >> $CHECK/cron.1min/check.sh
+		echo "shadowsocks check" >> $CHECK/cron.1min/check.sh
+		echo "shadowsocks check_rules" >> $CHECK/cron.1min/check.sh		
+		echo >> $CHECK/cron.1min/check.sh
+		chmod +x $CHECK/cron.1min/check.sh			
 			
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
-	fi
-
-	if [ "$xiaomi_fan" == "1" ]; then
-		echo -e -n "$ansi_white Setting XIAOMI Fan Mode... "
-		nvram set sch_c4="1,1439,127"
-		nvram set sch_c4_cmd="shadowsocks temp_s"
-		nvram set sch_c5="1,480,127"
-		nvram set sch_c5_cmd="shadowsocks temp"
-		$PREFIX/shadowsocks/shadowsocks temp
-		sleep 1
-		echo -e "            $ansi_green done. $ansi_std"	
 	fi	
-	echo -e "$BOLD Set successfully, please reboot the router. $NORM"	
 	;;
 
 "run" )
@@ -766,15 +788,23 @@ uptest= none;
 		echo '['$DATE'] Has loaded China route table.' > /var/log/chnroutes.log
 	fi
 
+	if [ "$adm_filter" == "1" ]; then
+		if [ ! -f "/var/log/admflt.lock" ]; then
+			sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S30adm (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
+		fi	
+	fi	
+	
 	PROCESS=$(ps | grep "ss-redir" | grep -v "grep")
 	if [ -z "$PROCESS" ]; then
 		mount -o bind /opt/sbin/dnsmasq /usr/sbin/dnsmasq && service dnsmasq restart
+#		/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
 		/opt/etc/init.d/S22shadowsocks start && touch /var/log/shadowsocks.lock
 #		/opt/etc/init.d/S23ss-tunnel start && touch /var/log/ss-tunnel.lock
 #		/opt/etc/init.d/S26pdnsd start && touch /var/log/pdnsd.lock
 #		/opt/etc/init.d/S24chinadns start && touch /var/log/chinadns.lock
 #		/opt/etc/init.d/S27pcap-dnsproxy start && touch /var/log/pcap_dnsproxy.lock
-#		/opt/etc/init.d/S29dnscrypt-proxy start && touch /var/log/dnscrypt-proxy.lock 
+#		/opt/etc/init.d/S29dnscrypt-proxy start && touch /var/log/dnscrypt-proxy.lock
+		/opt/etc/init.d/S10cron start
 		exit 0	
 	else
 		for i in `cat /var/log/server.txt`;do
@@ -811,7 +841,7 @@ uptest= none;
 	SS=`sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks.json`
 
 	PORT=`sed -n '1p' /opt/var/log/local_port.txt`	
-
+	
 	if [ -f "$PREFIX/shadowsocks/ignore.list" ]; then
 		ipset -N ss_spec_lan_ac hash:net
 		sed -e "s/^/-A ss_spec_wan_ac &/g" -e "1 i\-N ss_spec_wan_ac hash:net " $_input | ipset -R -!	
@@ -847,7 +877,7 @@ uptest= none;
 			sed -e "s/^/-A ss_spec_lan_ac &/g" -e "1 i\-N ss_spec_lan_ac hash:net " $safelist | ipset -R -!		
 		fi
 
-		if [ "$adm_filter" == "1" ];then
+		if [ "$adm_filter" == "1" ]; then
 			/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
 			ipset -A ss_spec_wan_ac 188.188.188.188/32
 			iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 18309
@@ -883,7 +913,7 @@ uptest= none;
 		iptables -t nat -A PREROUTING -p tcp -m set --match-set gfw_black_list dst -j REDIRECT --to-port $PORT
 		iptables -t nat -A OUTPUT -p tcp -m set --match-set gfw_black_list dst -j REDIRECT --to-port $PORT
 		
-		if [ "$adm_filter" == "1" ];then
+		if [ "$adm_filter" == "1" ]; then
 			/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
 			ipset -A ss_spec_wan_ac 188.188.188.188/32
 			iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 18309
@@ -1192,9 +1222,31 @@ uptest= none;
 				echo '['$DATE'] ChinaDNS no problem.' >> /var/log/chinadns_watchdog.log 2>&1
 			fi
 		fi
-	fi
+	fi		
 	;;
 
+"check_rules" )	
+	if [ -f "$PREFIX/shadowsocks/ignore.list" ]; then
+		if [ "`iptables -t nat -nvL | grep "SS_SPEC_WAN_AC" | wc -l`" -eq 3 ]; then
+			echo '['$DATE'] iptables rules no problem.' >> /var/log/iptables_rules.log 2>&1
+		else
+			echo '['$DATE'] iptables rules incomplete.' >> /var/log/iptables_rules.log 2>&1
+			rm -f $PREFIX/shadowsocks/flush.lock
+			$PREFIX/shadowsocks/shadowsocks flush
+			$PREFIX/shadowsocks/shadowsocks rules
+		fi
+	else
+		if [ "`iptables -t nat -nvL | grep "gfw_black_list" | wc -l`" -eq 2 ]; then
+			echo '['$DATE'] iptables rules no problem.' >> /var/log/iptables_rules.log 2>&1
+		else
+			echo '['$DATE'] iptables rules incomplete.' >> /var/log/iptables_rules.log 2>&1
+			rm -f $PREFIX/shadowsocks/flush.lock
+			$PREFIX/shadowsocks/shadowsocks flush
+			$PREFIX/shadowsocks/shadowsocks rules
+		fi
+	fi
+	;;
+	
 "ss_switch" )
 	ask_yes_or_no() {
     		read -p "$1 ([y]es or [n]o): "
@@ -1531,15 +1583,23 @@ Your Choice(Direct enter 0 is Restore Default):"
 	;;			
 
 "temp" )
-	TC=$(cat /tmp/sch_c1_cmd.sh | grep "temp" | grep -v "grep")
-	if [ -z "$TC" ]; then
-		echo -e "shadowsocks check \nshadowsocks temp" > /var/log/temp.txt
-		TEMP=`sed -e '' /var/log/temp.txt`
-		nvram set sch_c1_cmd="$TEMP"
-		nvram commit
+	if [ ! $(cat $CHECK/cron.1min/check.sh | grep "temp" | grep -v "grep" | wc -l) -ge 1 ]; then
+		echo "shadowsocks temp" >> $CHECK/cron.1min/check.sh
+		mkdir -p $CHECK/sch_script
+		sed -i '$i\0 8 * * * root /opt/bin/run-parts /opt/etc/sch_script\' $CHECK/crontab
+		echo "#!/bin/sh" >> $CHECK/sch_script/temp_s.sh
+		echo >> $CHECK/sch_script/temp_s.sh
+		echo "sed -i 's/#\(shadowsocks temp\)/\1/' $CHECK/cron.1min/check.sh" >> $CHECK/sch_script/temp_s.sh
+		echo >> $CHECK/sch_script/temp_s.sh
+		chmod +x $CHECK/sch_script/temp_s.sh
+		echo "#!/bin/sh" >> $CHECK/cron.daily/temp_s.sh
+		echo >> $CHECK/cron.daily/temp_s.sh
+		echo "shadowsocks temp_s" >> $CHECK/cron.daily/temp_s.sh
+		echo >> $CHECK/cron.daily/temp_s.sh
+		chmod +x $CHECK/cron.daily/temp_s.sh
 	fi
 	
-	T=`cat /proc/dmu/temperature | cut -f 3 -d" " | grep "^[0-9]\{2\}"| cut -c 1,2`
+	T=`cat /proc/dmu/temperature | cut -f 3 -d" " | cut -c 1,2 | grep "^[0-9]\{2\}"`
 
 	if [ $T -lt 80 ]; then
 		NEWSPEED=2
@@ -1559,10 +1619,9 @@ Your Choice(Direct enter 0 is Restore Default):"
 	;;
 
 "temp_s" )
-	TC=$(cat /tmp/sch_c1_cmd.sh | grep "temp" | grep -v "grep")
+	TC=$(cat $CHECK/cron.1mins/check.sh | grep "temp" | grep -v "grep")
 	if [ -n "$TC" ]; then
-		nvram set sch_c1_cmd="shadowsocks check"
-		nvram commit
+		sed -i 's/\(^shadowsocks temp\)/#\1/' $CHECK/cron.1min/check.sh
 	fi
 
 	nvram set fanctrl_dutycycle=1
@@ -1695,11 +1754,11 @@ Your Choice(Direct enter 0 is Restore Default):"
 	nvram set script_wanup=""
 	nvram commit
 	sleep 1				
-	nvram set sch_c1_cmd=""
-	nvram set sch_c2_cmd=""
-	nvram set sch_c1="0,-30,127"
-	nvram set sch_c2="0,-30,127"
-	nvram commit
+	/opt/etc/init.d/S10cron stop
+	rm -r $CHECK/cron.daily/* &> /dev/null
+	rm -r $CHECK/cron.5mins/* &> /dev/null
+	rm -r $CHECK/cron.1mins/* &> /dev/null 
+	rm -r $CHECK/sch_script/* &> /dev/null
 
 	rm -f /opt/etc/dnsmasq.conf
 	echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
@@ -1736,8 +1795,8 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.3.28 $ansi_std"
-	echo -e "$ansi_green # Version: V5.0-4 (ARM final version) $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.4.1 $ansi_std"
+	echo -e "$ansi_green # Version: V5.0-5 (ARM final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
@@ -1770,7 +1829,8 @@ Your Choice(Direct enter 0 is Restore Default):"
 	echo -e "$ansi_white   [flush] Clear firewall policy $ansi_std"
 	echo -e "$ansi_white   [update] Update chnroutes Routing Host $ansi_std"
 	echo -e "$ansi_white   [update_gfwlist] Update GFWLIST domain $ansi_std"
-	echo -e "$ansi_white   [check] Guardian ss-redir $ansi_std"
+	echo -e "$ansi_white   [check] Guardian ss-redir* $ansi_std"
+	echo -e "$ansi_white   [check_rules] Guardian iptables rules $ansi_std"
 	echo -e "$ansi_white   [ss_switch] Account switching $ansi_std"
 	echo -e "$ansi_white   [mult_switch] Multiple_switching $ansi_std"
 	echo -e "$ansi_white   [lan_ignore] LAN access control $ansi_std"
