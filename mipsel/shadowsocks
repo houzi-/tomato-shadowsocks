@@ -829,23 +829,23 @@ uptest= none;
 		if [ "$adbyby_filter" == "1" ]; then
 			[ ! $(ps | grep "adbyby" | grep -v "grep" | wc -l) -ge 1 ] && /opt/etc/init.d/S30adbyby start
 #			ipset -A ss_spec_wan_ac 100.100.100.100/32
-			adm_put=$PREFIX/shadowsocks/adm_ignore.list
-			if [ ! -f "$adm_put" ]; then
-				sed -n '1,15p' $PREFIX/shadowsocks/ignore.list > $PREFIX/shadowsocks/adm_ignore.list
+			adbyby_put=$PREFIX/shadowsocks/adbyby_ignore.list
+			if [ ! -f "$adbyby_put" ]; then
+				sed -n '1,15p' $PREFIX/shadowsocks/ignore.list > $PREFIX/shadowsocks/adbyby_ignore.list
 			fi
-			iptables -t nat -N ADM_AC
-			iptables -t nat -N ADM_FW
+			iptables -t nat -N ADBYBY_AC
+			iptables -t nat -N ADBYBY_FW
 			ipset -R <<-end
-			-N adm_wan_ac nethash
-			$(egrep -v "^#|^$" $adm_put | sed -e "s/^/-A adm_wan_ac /")
+			-N adbyby_wan_ac nethash
+			$(egrep -v "^#|^$" $adbyby_put | sed -e "s/^/-A adbyby_wan_ac /")
 			COMMIT
 			end
-			ipset -N adm_lan_ac iphash
-			iptables -t nat -A ADM_AC -m set --set adm_wan_ac dst -j RETURN
-			iptables -t nat -A ADM_AC -j ADM_FW
-			iptables -t nat -A ADM_FW -p tcp --dport 80 -j REDIRECT --to-ports 8118
-			iptables -t nat -A PREROUTING -p tcp -m set ! --set adm_lan_ac src -j ADM_AC
-		fi
+			ipset -N adbyby_lan_ac iphash
+			iptables -t nat -A ADBYBY_AC -m set --set adbyby_wan_ac dst -j RETURN
+			iptables -t nat -A ADBYBY_AC -j ADBYBY_FW
+			iptables -t nat -A ADBYBY_FW -p tcp --dport 80 -j REDIRECT --to-ports 8118
+			iptables -t nat -A PREROUTING -p tcp -m set ! --set adbyby_lan_ac src -j ADBYBY_AC
+		fi	
 		
 		iptables -t nat -L OUTPUT > /var/log/iptables.txt
 		I=`cat /var/log/iptables.txt|grep -c multiport`
@@ -882,23 +882,23 @@ uptest= none;
 		if [ "$adbyby_filter" == "1" ]; then
 			[ ! $(ps | grep "adbyby" | grep -v "grep" | wc -l) -ge 1 ] && /opt/etc/init.d/S30adbyby start
 #			ipset -A ss_spec_wan_ac 100.100.100.100/32
-			adm_put=$PREFIX/shadowsocks/adm_ignore.list
-			if [ ! -f "$adm_put" ]; then
-				sed -n '1,15p' $PREFIX/shadowsocks/ignore.list > $PREFIX/shadowsocks/adm_ignore.list
+			adbyby_put=$PREFIX/shadowsocks/adbyby_ignore.list
+			if [ ! -f "$adbyby_put" ]; then
+				sed -n '1,15p' $PREFIX/shadowsocks/ignore.list > $PREFIX/shadowsocks/adbyby_ignore.list
 			fi
-			iptables -t nat -N ADM_AC
-			iptables -t nat -N ADM_FW
+			iptables -t nat -N ADBYBY_AC
+			iptables -t nat -N ADBYBY_FW
 			ipset -R <<-end
-			-N adm_wan_ac nethash
-			$(egrep -v "^#|^$" $adm_put | sed -e "s/^/-A adm_wan_ac /")
+			-N adbyby_wan_ac nethash
+			$(egrep -v "^#|^$" $adbyby_put | sed -e "s/^/-A adbyby_wan_ac /")
 			COMMIT
 			end
-			ipset -N adm_lan_ac iphash
-			iptables -t nat -A ADM_AC -m set --set adm_wan_ac dst -j RETURN
-			iptables -t nat -A ADM_AC -j ADM_FW
-			iptables -t nat -A ADM_FW -p tcp --dport 80 -j REDIRECT --to-ports 8118
-			iptables -t nat -A PREROUTING -p tcp -m set ! --set adm_lan_ac src -j ADM_AC
-		f			
+			ipset -N adbyby_lan_ac iphash
+			iptables -t nat -A ADBYBY_AC -m set --set adbyby_wan_ac dst -j RETURN
+			iptables -t nat -A ADBYBY_AC -j ADBYBY_FW
+			iptables -t nat -A ADBYBY_FW -p tcp --dport 80 -j REDIRECT --to-ports 8118
+			iptables -t nat -A PREROUTING -p tcp -m set ! --set adbyby_lan_ac src -j ADBYBY_AC
+		fi			
 		
 		rm -f /var/log/chnroutes.log
 		echo "$(date): start gfwlist" >> /var/log/gfwlist.log 
@@ -975,27 +975,35 @@ uptest= none;
 		ipset -X gfw_black_list &> /dev/null
 	fi
 
+	if [ "$adbyby_filter" == "1" ];then
+		iptables -t nat -D PREROUTING -p tcp -m set ! --set adbyby_lan_ac src -j ADBYBY_AC &> /dev/null
+		iptables -t nat -F ADBYBY_AC&> /dev/null
+		iptables -t nat -D ADBYBY_AC&> /dev/null		
+		iptables -t nat -F ADBYBY_FW&> /dev/null
+		iptables -t nat -D ADBYBY_FW&> /dev/null
+		iptables -t nat -X ADBYBY_AC &> /dev/null
+		iptables -t nat -X ADBYBY_FW &> /dev/null
+		sleep 1
+		ipset -X adbyby_wan_ac &> /dev/null
+		ipset -X adbyby_lan_ac &> /dev/null		
+	fi	
+	
 	IFNAME=$(nvram get lan_ifname &> /dev/null)
 	iptables -t nat -D PREROUTING ${IFNAME:+-i $IFNAME} -p tcp -m multiport --dports 22,80,443 -m set --set ss_spec_lan_ac src -j SS_SPEC_WAN_AC &> /dev/null
 	iptables -t nat -D PREROUTING ${IFNAME:+-i $IFNAME} -p tcp -m multiport --dports 22,80,443 -m set ! --set ss_spec_lan_ac src -j SS_SPEC_WAN_AC &> /dev/null
 	lan_ipaddr=`nvram get lan_ipaddr`
 	iptables -t nat -D PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5353 &> /dev/null
 	iptables -t nat -D PREROUTING -p tcp --dport 53 -j DNAT --to-destination $lan_ipaddr:53 &> /dev/null
+	iptables -t nat -F SS_SPEC_WAN_FW &> /dev/null	
 	iptables -t nat -D SS_SPEC_WAN_FW &> /dev/null
-	iptables -t nat -F SS_SPEC_WAN_FW &> /dev/null
-	iptables -t nat -D SS_SPEC_WAN_AC &> /dev/null
 	iptables -t nat -F SS_SPEC_WAN_AC &> /dev/null
+	iptables -t nat -D SS_SPEC_WAN_AC &> /dev/null
 	iptables -t nat -D OUTPUT ${IFNAME:+-o $IFNAME} -p tcp -m multiport --dports 22,80,443 -j SS_SPEC_WAN_AC &> /dev/null
 	sleep 1
 	iptables -t nat -X SS_SPEC_WAN_AC &> /dev/null
 	iptables -t nat -X SS_SPEC_WAN_FW &> /dev/null
 	ipset -X ss_spec_wan_ac &> /dev/null
 	ipset -X ss_spec_lan_ac &> /dev/null
-	
-	if [ "$adbyby_filter" == "1" ];then
-		iptables -t nat -D PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8118 &> /dev/null
-		iptables -t nat -D PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8118 &> /dev/null
-	fi
 	
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"
