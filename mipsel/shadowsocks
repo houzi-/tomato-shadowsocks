@@ -51,6 +51,7 @@ SHADOWSOCKS="$ansi_white SHADOWSOCKS: "
 START_SCRIPT="$ansi_white START_SCRIPT: "
 ShadowSocks_Account="$ansi_white ShadowSocks_Account: "
 DNSMASQ="$ansi_white DNSMASQ: "
+ZONEINFO_ASIA="$ansi_white ZONEINFO_ASIA: "
 
 # You can mount the partition path editing (EP:"/jffs" or "/tmp/mnt/sdb1" )
 PREFIX=/jffs
@@ -63,6 +64,9 @@ dnsmasq=/opt/etc/dnsmasq.conf
 
 # Schduler
 CHECK=/opt/etc
+
+# Zoneinfo
+ZONE=/opt/share/zoneinfo/Hongkong
 
 case ${1} in
 
@@ -200,6 +204,19 @@ case ${1} in
 		echo -e "$ansi_green PASS. $ansi_std"
 	fi
 
+	if [ -f "$ZONE" ]; then
+		echo -e -n $ZONEINFO_ASIA
+		sleep 1
+		echo -e "$ansi_green PASS. $ansi_std"
+	else
+		echo -e -n $ZONEINFO_ASIA
+		sleep 1
+		echo -e "$ansi_red ERROR. $ansi_std"	
+		echo -e "$WARNING \n$BOLD Please install the following software:"$NORM
+		echo -e "$ansi_white zoneinfo_asia"
+		exit 0
+	fi		
+	
 	ask_yes_or_no() {
     		read -p "$1 ([y]es or [n]o): "
     		case $(echo $REPLY | tr '[A-Z]' '[a-z]') in
@@ -299,6 +316,7 @@ Your Choice:"
 
 		service dnsmasq restart
 		
+		echo UTC-8 > /opt/etc/TZ		
 		$PREFIX/shadowsocks/shadowsocks run
 		touch /var/log/ipset.lock
 		$PREFIX/shadowsocks/shadowsocks ipset
@@ -359,8 +377,9 @@ uptest= none;
 		nvram commit
 
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
-		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh
+		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh		
 
+		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
 	elif [ $programs == "2" ];then
@@ -428,6 +447,7 @@ uptest= none;
 
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
+		echo UTC-8 > /opt/etc/TZ		
 		$PREFIX/shadowsocks/shadowsocks run
 		sleep 4
 		$PREFIX/shadowsocks/shadowsocks ipset
@@ -465,6 +485,7 @@ uptest= none;
 
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
+		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
 	elif [ $programs == "3" ];then
@@ -506,6 +527,7 @@ uptest= none;
 
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
+		echo UTC-8 > /opt/etc/TZ		
 		$PREFIX/shadowsocks/shadowsocks run
 		sleep 4
 		$PREFIX/shadowsocks/shadowsocks ipset
@@ -544,6 +566,7 @@ uptest= none;
 		/opt/etc/init.d/S29dnscrypt-proxy start
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
+		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null		
 	elif [ $programs == "4" ];then
@@ -581,7 +604,8 @@ uptest= none;
 			
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
-		touch /var/log/pcap_dnsproxy.lock		
+		touch /var/log/pcap_dnsproxy.lock
+		echo UTC-8 > /opt/etc/TZ	
 		$PREFIX/shadowsocks/shadowsocks run
 		sleep 4
 		$PREFIX/shadowsocks/shadowsocks ipset
@@ -619,6 +643,7 @@ uptest= none;
 
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
+		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
 	elif [ $programs == "5" ];then
@@ -662,6 +687,7 @@ uptest= none;
 			
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
+		echo UTC-8 > /opt/etc/TZ		
 		$PREFIX/shadowsocks/shadowsocks run
 		sleep 4
 		$PREFIX/shadowsocks/shadowsocks ipset
@@ -699,6 +725,7 @@ uptest= none;
 			
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
+		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
 	fi	
@@ -729,6 +756,7 @@ uptest= none;
 #		/opt/etc/init.d/S24chinadns start && touch /var/log/chinadns.lock
 #		/opt/etc/init.d/S27pcap-dnsproxy start && touch /var/log/pcap_dnsproxy.lock
 #		/opt/etc/init.d/S29dnscrypt-proxy start && touch /var/log/dnscrypt-proxy.lock
+		/opt/etc/init.d/S00timezone start
 		/opt/etc/init.d/S10cron start
 		exit 0
 	else
@@ -796,14 +824,28 @@ uptest= none;
 
 		if [ -f "$PREFIX/shadowsocks/safe.list" ]; then
 			$PREFIX/shadowsocks/safe.sh				
-		fi
-		
-		if [ "$adbyby_filter" == "1" ];then
-			/opt/etc/init.d/S30adbyby start && touch /var/log/adbyby.lock
-#			ipset -A ss_spec_wan_ac 100.100.100.100/32
-			iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8118
-#			iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8118
 		fi		
+
+		if [ "$adbyby_filter" == "1" ]; then
+			[ ! $(ps | grep "adbyby" | grep -v "grep" | wc -l) -ge 1 ] && /opt/etc/init.d/S30adbyby start
+#			ipset -A ss_spec_wan_ac 100.100.100.100/32
+			adm_put=$PREFIX/shadowsocks/adm_ignore.list
+			if [ ! -f "$adm_put" ]; then
+				sed -n '1,15p' $PREFIX/shadowsocks/ignore.list > $PREFIX/shadowsocks/adm_ignore.list
+			fi
+			iptables -t nat -N ADM_AC
+			iptables -t nat -N ADM_FW
+			ipset -R <<-end
+			-N adm_wan_ac nethash
+			$(egrep -v "^#|^$" $adm_put | sed -e "s/^/-A adm_wan_ac /")
+			COMMIT
+			end
+			ipset -N adm_lan_ac iphash
+			iptables -t nat -A ADM_AC -m set --set adm_wan_ac dst -j RETURN
+			iptables -t nat -A ADM_AC -j ADM_FW
+			iptables -t nat -A ADM_FW -p tcp --dport 80 -j REDIRECT --to-ports 8118
+			iptables -t nat -A PREROUTING -p tcp -m set ! --set adm_lan_ac src -j ADM_AC
+		fi
 		
 		iptables -t nat -L OUTPUT > /var/log/iptables.txt
 		I=`cat /var/log/iptables.txt|grep -c multiport`
@@ -837,12 +879,26 @@ uptest= none;
 		iptables -t nat -A PREROUTING -p tcp -m set --set gfw_black_list dst -j REDIRECT --to-port $PORT
 		iptables -t nat -A OUTPUT -p tcp -m set --set gfw_black_list dst -j REDIRECT --to-port $PORT
 		
-		if [ "$adbyby_filter" == "1" ];then
-			/opt/etc/init.d/S30adbyby start && touch /var/log/adbyby.lock
+		if [ "$adbyby_filter" == "1" ]; then
+			[ ! $(ps | grep "adbyby" | grep -v "grep" | wc -l) -ge 1 ] && /opt/etc/init.d/S30adbyby start
 #			ipset -A ss_spec_wan_ac 100.100.100.100/32
-			iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8118
-#			iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8118
-		fi			
+			adm_put=$PREFIX/shadowsocks/adm_ignore.list
+			if [ ! -f "$adm_put" ]; then
+				sed -n '1,15p' $PREFIX/shadowsocks/ignore.list > $PREFIX/shadowsocks/adm_ignore.list
+			fi
+			iptables -t nat -N ADM_AC
+			iptables -t nat -N ADM_FW
+			ipset -R <<-end
+			-N adm_wan_ac nethash
+			$(egrep -v "^#|^$" $adm_put | sed -e "s/^/-A adm_wan_ac /")
+			COMMIT
+			end
+			ipset -N adm_lan_ac iphash
+			iptables -t nat -A ADM_AC -m set --set adm_wan_ac dst -j RETURN
+			iptables -t nat -A ADM_AC -j ADM_FW
+			iptables -t nat -A ADM_FW -p tcp --dport 80 -j REDIRECT --to-ports 8118
+			iptables -t nat -A PREROUTING -p tcp -m set ! --set adm_lan_ac src -j ADM_AC
+		f			
 		
 		rm -f /var/log/chnroutes.log
 		echo "$(date): start gfwlist" >> /var/log/gfwlist.log 
@@ -1762,8 +1818,8 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.4.1 $ansi_std"
-	echo -e "$ansi_green # Version: V5.0-5 (MIPS final version) $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.4.3 $ansi_std"
+	echo -e "$ansi_green # Version: V5.0-6 (MIPS final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"

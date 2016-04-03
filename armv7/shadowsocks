@@ -26,10 +26,10 @@ CONTENT="Your tools running over the wall!"
 TO=""
 
 # XIAOMI Fan Mode
-xiaomi_fan=1
+xiaomi_fan=0
 
 # ADM ad filter
-adm_filter=1
+adm_filter=0
 
 READ="\033[31;1m"
 BOLD="\033[42;1m"	
@@ -57,7 +57,7 @@ DNSMASQ="$ansi_white DNSMASQ: "
 ZONEINFO_ASIA="$ansi_white ZONEINFO_ASIA: "
 
 # You can mount the partition path editing (EP:"/jffs" or "/tmp/mnt/sda1" )
-PREFIX=/mnt/sda1
+PREFIX=/jffs
 
 # Time
 DATE=$(date "+%Y-%m-%d %H:%M:%S")
@@ -1810,7 +1810,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.4.2 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.4.3 $ansi_std"
 	echo -e "$ansi_green # Version: V5.0-6 (ARM final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
