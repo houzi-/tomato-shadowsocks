@@ -85,7 +85,7 @@ case ${1} in
 			cp /tmp/shadowsocks $PREFIX/shadowsocks
 			mount -o bind $PREFIX/opt /opt
 			cd /opt && wget -O - http://pkg.entware.net/binaries/mipsel/installer/installer.sh | sh
-			cd /tmp && opkg install --force-checksum china* pdnsd* pcap* reso* shadow* diff* dnscr* cur* dnsma* cron*
+			cd /tmp && opkg install --force-checksum china* pdnsd* pcap* reso* shadow* diff* dnscr* cur* dnsma* cron* zone*
 			echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
 			sleep 5
 			ln -s $PREFIX/shadowsocks/shadowsocks /opt/bin
@@ -147,7 +147,7 @@ case ${1} in
 
 	BIN=/opt/bin
 	SBIN=/opt/sbin	
-	echo -e "chinadns \ncrontab \ncurl \ndiff \ndnscrypt-proxy \nPcap_DNSProxy \npdnsd-ctl \nresolvip \nss-redir" > /var/log/find.txt
+	echo -e "Pcap_DNSProxy \nchinadns \ncrontab \ncurl \ndiff \ndnscrypt-proxy \npdnsd-ctl \nresolvip \nss-redir" > /var/log/find.txt
 	cd $BIN
 	if [ ! -f chinadns -o ! -f Pcap_DNSProxy -o ! -f ss-redir -o ! -f resolvip -o ! -f pdnsd-ctl -o ! -f diff -o ! -f dnscrypt-proxy -o ! -f curl ]; then	
 		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy curl crontab > /var/log/find_N.txt
@@ -844,7 +844,7 @@ uptest= none;
 			iptables -t nat -A ADBYBY_AC -m set --set adbyby_wan_ac dst -j RETURN
 			iptables -t nat -A ADBYBY_AC -j ADBYBY_FW
 			iptables -t nat -A ADBYBY_FW -p tcp --dport 80 -j REDIRECT --to-ports 8118
-			iptables -t nat -A PREROUTING -p tcp -m set ! --set adbyby_lan_ac src -j ADBYBY_AC
+			iptables -t nat -A PREROUTING -p tcp --dport 80 -m set ! --set adbyby_lan_ac src -j ADBYBY_AC
 		fi	
 		
 		iptables -t nat -L OUTPUT > /var/log/iptables.txt
@@ -897,7 +897,7 @@ uptest= none;
 			iptables -t nat -A ADBYBY_AC -m set --set adbyby_wan_ac dst -j RETURN
 			iptables -t nat -A ADBYBY_AC -j ADBYBY_FW
 			iptables -t nat -A ADBYBY_FW -p tcp --dport 80 -j REDIRECT --to-ports 8118
-			iptables -t nat -A PREROUTING -p tcp -m set ! --set adbyby_lan_ac src -j ADBYBY_AC
+			iptables -t nat -A PREROUTING -p tcp --dport 80 -m set ! --set adbyby_lan_ac src -j ADBYBY_AC
 		fi			
 		
 		rm -f /var/log/chnroutes.log
@@ -976,7 +976,7 @@ uptest= none;
 	fi
 
 	if [ "$adbyby_filter" == "1" ];then
-		iptables -t nat -D PREROUTING -p tcp -m set ! --set adbyby_lan_ac src -j ADBYBY_AC &> /dev/null
+		iptables -t nat -D PREROUTING -p tcp --dport 80 -m set ! --set adbyby_lan_ac src -j ADBYBY_AC &> /dev/null
 		iptables -t nat -F ADBYBY_AC&> /dev/null
 		iptables -t nat -D ADBYBY_AC&> /dev/null		
 		iptables -t nat -F ADBYBY_FW&> /dev/null

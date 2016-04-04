@@ -873,7 +873,7 @@ uptest= none;
 			iptables -t nat -A ADM_AC -m set --match-set adm_wan_ac dst -j RETURN
 			iptables -t nat -A ADM_AC -j ADM_FW
 			iptables -t nat -A ADM_FW -p tcp --dport 80 -j REDIRECT --to-ports 18309
-			iptables -t nat -A PREROUTING -p tcp -m set ! --match-set adm_lan_ac src -j ADM_AC
+			iptables -t nat -A PREROUTING -p tcp --dport 80 -m set ! --match-set adm_lan_ac src -j ADM_AC
 		fi			
 
 		while :
@@ -919,7 +919,7 @@ uptest= none;
 			iptables -t nat -A ADM_AC -m set --match-set adm_wan_ac dst -j RETURN
 			iptables -t nat -A ADM_AC -j ADM_FW
 			iptables -t nat -A ADM_FW -p tcp --dport 80 -j REDIRECT --to-ports 18309
-			iptables -t nat -A PREROUTING -p tcp -m set ! --match-set adm_lan_ac src -j ADM_AC
+			iptables -t nat -A PREROUTING -p tcp --dport 80 -m set ! --match-set adm_lan_ac src -j ADM_AC
 		fi			
 		
 		rm -f /var/log/chnroutes.log
@@ -978,7 +978,7 @@ uptest= none;
 	fi
 
 	if [ "$adm_filter" == "1" ]; then
-		iptables -t nat -D PREROUTING -p tcp -m set ! --match-set adm_lan_ac src -j ADM_AC &> /dev/null
+		iptables -t nat -D PREROUTING -p tcp --dport 80 -m set ! --match-set adm_lan_ac src -j ADM_AC &> /dev/null
 		iptables -t nat -F ADM_AC &> /dev/null
 		iptables -t nat -F ADM_FW &> /dev/null
 		iptables -t nat -X ADM_AC &> /dev/null
