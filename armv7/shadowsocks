@@ -58,6 +58,8 @@ ZONEINFO_ASIA="$ansi_white ZONEINFO_ASIA: "
 
 # You can mount the partition path editing (EP:"/jffs" or "/tmp/mnt/sda1" )
 PREFIX=/jffs
+SCRIPT_DIR=$(dirname ${0})
+SCRIPT_DIR=$(cd ${SCRIPT_DIR} && pwd)
 
 # Time
 DATE=$(date "+%Y-%m-%d %H:%M:%S")
@@ -85,13 +87,18 @@ case ${1} in
 		if [ ! -d "$PREFIX/shadowsocks" ]; then
 			echo -e $INFO "Creating in..."
 			cd $PREFIX;mkdir -p opt;mkdir -p shadowsocks;cd /;cd /tmp/home/root
-			cp /tmp/shadowsocks $PREFIX/shadowsocks
+			cp $SCRIPT_DIR/shadowsocks $PREFIX/shadowsocks
 			mount -o bind $PREFIX/opt /opt
 			cd /opt && wget -O - http://pkg.entware.net/binaries/armv7/installer/entware_install.sh | sh
-			cd /tmp && opkg install --force-checksum china* pdnsd* pcap* reso* shadow* diff* dnscr* dnsma* cron* zonei*
-			echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
-			sleep 5
-			ln -s $PREFIX/shadowsocks/shadowsocks /opt/bin		
+			if [ -e $SCRIPT_DIR/china* -a -e $SCRIPT_DIR/cron* -a -e $SCRIPT_DIR/dif* -a -e $SCRIPT_DIR/Pcap_DNS* -a -e $SCRIPT_DIR/pdns* -a -e $SCRIPT_DIR/resol* -a -e $SCRIPT_DIR/shadow* -a -e $SCRIPT_DIR/dnscryp* -a -e $SCRIPT_DIR/zone* -a -e $SCRIPT_DIR/dnsma* ]; then
+				cd $SCRIPT_DIR && opkg install --force-checksum china* pdnsd* pcap* reso* shadow* diff* dnscr* dnsma* cron* zonei*
+				echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
+				sleep 5
+				ln -s $PREFIX/shadowsocks/shadowsocks /opt/bin
+			else
+				echo -e "$ansi_red You do not import the entire IPK! $ansi_std"
+				exit 0
+			fi	
 		else
 			echo -e "$ansi_yellow SHADOWSOCKS already installed! $ansi_std"
 		fi
@@ -130,7 +137,7 @@ case ${1} in
 		echo -e -n $SHADOWSOCKS
 		sleep 1
 		echo -e "$ansi_red ERROR. $ansi_std"
-		rm -rf $PREFIX/*
+		rm -rf $PREFIX/opt
 		echo -e $WARNING $BOLD"Please install the SHADOWSOCKS script."$NORM 
 		exit 0		
 	fi
@@ -139,7 +146,7 @@ case ${1} in
 		echo -e -n $MOUNT
 		sleep 1
 		echo -e "$ansi_red ERROR. $ansi_std"
-		rm -rf $PREFIX/*
+		rm -rf $PREFIX/opt
 		echo -e $WARNING $BOLD"OPT directory does not mount."$NORM 
 		exit 0
 	else
@@ -150,31 +157,44 @@ case ${1} in
 
 	BIN=/opt/bin
 	SBIN=/opt/sbin
-	echo -e "Pcap_DNSProxy \nchinadns \ncrontab \ndiff \ndnscrypt-proxy \npdnsd-ctl \nresolvip \nss-redir" > /var/log/find.txt	
+	echo -e "chinadns \ncrontab \ndiff \ndnscrypt-proxy \nPcap_DNSProxy \npdnsd-ctl \nresolvip \nss-redir \ndnsmasq \nzoneinfo_asia" > /var/log/find.txt	
 	cd $BIN
 	if [ ! -f chinadns -o ! -f Pcap_DNSProxy -o ! -f ss-redir -o ! -f resolvip -o ! -f pdnsd-ctl -o ! -f diff -o ! -f dnscrypt-proxy ]; then	
 		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy crontab > /var/log/find_N.txt
 	else
 		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy crontab > /var/log/find_N.txt
 	fi
-
+	cd /
+	
 	find $SBIN/dnsmasq &> /dev/null;echo $? > /var/log/sbin.txt
 	sbin=`sed -n '1p' /var/log/sbin.txt`
 	if [ "$sbin" == "0" ]; then
 		echo -e -n $DNSMASQ
 		sleep 1 
+		sed -i '/^$/d' /var/log/find_N.txt
+		echo "dnsmasq" >> /var/log/find_N.txt
 		echo -e "$ansi_green PASS. $ansi_std"
 	else
 		echo -e $DNSMASQ
-		sleep 1
-		echo -e "$ansi_red ERROR. $ansi_std"
-		echo -e "$WARNING \n$BOLD Please install the following software:"$NORM
-		rm -rf $PREFIX/*
+		sleep 1	
+		rm -rf $PREFIX/opt
 		echo -e $ansi_white"dnsmasq-full"$ansi_std
-		exit 0
 	fi				 
 
-	find chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy crontab &> /dev/null;echo $? > /var/log/diff.txt;cd /
+	if [ -f "$ZONE" ]; then
+		echo -e -n $ZONEINFO_ASIA
+		sleep 1
+		sed -i '/^$/d' /var/log/find_N.txt
+		echo "zoneinfo_asia" >> /var/log/find_N.txt
+		echo -e "$ansi_green PASS. $ansi_std"
+	else
+		echo -e -n $ZONEINFO_ASIA
+		sleep 1		
+		rm -rf $PREFIX/opt
+		echo -e "$ansi_white zoneinfo_asia"
+	fi
+	
+	find $BIN/chinadns $BIN/Pcap_DNSProxy $BIN/ss-redir $BIN/resolvip $BIN/pdnsd-ctl $BIN/diff $BIN/dnscrypt-proxy $BIN/crontab $SBIN/dnsmasq $ZONE &> /dev/null;echo $? > /var/log/diff.txt
 	DIFF=`sed -n '1p' /var/log/diff.txt`
 	diff -w /var/log/find.txt /var/log/find_N.txt | grep \^\< > /var/log/diff_show.txt
 	if [ "$DIFF" == "0" ]; then
@@ -182,20 +202,20 @@ case ${1} in
 		sleep 1 
 		echo -e "$ansi_green PASS. $ansi_std"
 	else
-		if [ ! -e $BIN/chinadns -a ! -e $BIN/crontab -a ! -e $BIN/diff -a ! -e $BIN/Pcap_DNSProxy -a ! -e $BIN/pdnsd-ctl -a ! -e $BIN/resolvip -a ! -e $BIN/ss-redir -a ! -e $BIN/dnscrypt-proxy ]; then
+		if [ ! -e $BIN/chinadns -a ! -e $BIN/crontab -a ! -e $BIN/diff -a ! -e $BIN/Pcap_DNSProxy -a ! -e $BIN/pdnsd-ctl -a ! -e $BIN/resolvip -a ! -e $BIN/ss-redir -a ! -e $BIN/dnscrypt-proxy -a ! -e $SBIN/dnsmasq -a ! -e $ZONE ]; then
 			echo -e $DEPENDENCE
 			sleep 1
 			echo -e "$ansi_red ERROR. $ansi_std"
 			echo -e "$WARNING \n$BOLD Please install the following software:"$NORM
-			rm -rf $PREFIX/*
-			echo -e $ansi_white"shadowsocks-libev \nchinadns \npdnsd \npcap-dnsproxy \nresolvip \ndiffutils \ndnscrypt-proxy"$ansi_std
+			rm -rf $PREFIX/opt
+			echo -e $ansi_white"shadowsocks-libev \nchinadns \npdnsd \npcap-dnsproxy \nresolvip \ndiffutils \ncrontab \ndnscrypt-proxy \ndnsmasq \nzoneinfo_asia"$ansi_std
 			exit 0
 		else	
 			echo -e $DEPENDENCE
 			sleep 1
 			echo -e "$ansi_red ERROR. $ansi_std"
 			echo -e "$WARNING \n$BOLD Please install the following software:"$NORM
-			rm -rf $PREFIX/*
+			rm -rf $PREFIX/opt
 			cat /var/log/diff_show.txt
 			exit 0
 		fi
@@ -206,19 +226,6 @@ case ${1} in
 		sleep 1
 		echo -e "$ansi_green PASS. $ansi_std"
 	fi
-
-	if [ -f "$ZONE" ]; then
-		echo -e -n $ZONEINFO_ASIA
-		sleep 1
-		echo -e "$ansi_green PASS. $ansi_std"
-	else
-		echo -e -n $ZONEINFO_ASIA
-		sleep 1
-		echo -e "$ansi_red ERROR. $ansi_std"	
-		echo -e "$WARNING \n$BOLD Please install the following software:"$NORM
-		echo -e "$ansi_white zoneinfo_asia"
-		exit 0
-	fi	
 	
 	ask_yes_or_no() {
     		read -p "$1 ([y]es or [n]o): "
@@ -1810,7 +1817,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.4.3 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.4.5 $ansi_std"
 	echo -e "$ansi_green # Version: V5.0-6 (ARM final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
