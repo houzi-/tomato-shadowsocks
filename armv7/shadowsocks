@@ -883,7 +883,7 @@ uptest= none;
 			iptables -t nat -A ADM_AC -m set --match-set adm_wan_ac dst -j RETURN
 			iptables -t nat -A ADM_AC -j ADM_FW
 			iptables -t nat -A ADM_FW -p tcp --dport 80 -j REDIRECT --to-ports 18309
-			iptables -t nat -I PREROUTING 1 -p tcp --dport 80 -m set ! --match-set adm_lan_ac src -j ADM_AC
+			iptables -t nat -A PREROUTING -p tcp --dport 80 -m set ! --match-set adm_lan_ac src -j ADM_AC
 		fi			
 
 		while :
@@ -929,7 +929,7 @@ uptest= none;
 			iptables -t nat -A ADM_AC -m set --match-set adm_wan_ac dst -j RETURN
 			iptables -t nat -A ADM_AC -j ADM_FW
 			iptables -t nat -A ADM_FW -p tcp --dport 80 -j REDIRECT --to-ports 18309
-			iptables -t nat -I PREROUTING 1 -p tcp --dport 80 -m set ! --match-set adm_lan_ac src -j ADM_AC
+			iptables -t nat -A PREROUTING -p tcp --dport 80 -m set ! --match-set adm_lan_ac src -j ADM_AC
 		fi
 		
 		iptables-save | grep -E "gfw_black|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log					
