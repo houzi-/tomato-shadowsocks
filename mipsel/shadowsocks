@@ -811,6 +811,8 @@ uptest= none;
 		iptables -t nat -N SS_SPEC_WAN_AC
 		iptables -t nat -N SS_SPEC_WAN_FW
 		iptables -t nat -A SS_SPEC_WAN_AC -d $SS -j RETURN
+		nvram get wan_ppp_get_ip > /var/log/wan_ipaddr.log
+		iptables -t nat -A SS_SPEC_WAN_AC -d `nvram get wan_ppp_get_ip` -j RETURN		
 #		iptables -t nat -A SS_SPEC_WAN_AC -d `sed -n '1p' /opt/var/log/resolvip.txt` -j RETURN
 		iptables -t nat -A SS_SPEC_WAN_AC -m set --set ss_spec_wan_ac dst -j RETURN
 		iptables -t nat -A SS_SPEC_WAN_AC -j SS_SPEC_WAN_FW
@@ -942,6 +944,7 @@ uptest= none;
 		iptables -t nat -N SS_SPEC_WAN_AC
 		iptables -t nat -N SS_SPEC_WAN_FW
 		iptables -t nat -A SS_SPEC_WAN_AC -d $SS -j RETURN
+		iptables -t nat -A SS_SPEC_WAN_AC -d `nvram get wan_ppp_get_ip` -j RETURN		
 #		iptables -t nat -A SS_SPEC_WAN_AC -d `sed -n '1p' /opt/var/log/resolvip.txt` -j RETURN
 		iptables -t nat -A SS_SPEC_WAN_AC -m set --set ss_spec_wan_ac dst -j RETURN
 		iptables -t nat -A SS_SPEC_WAN_AC -j SS_SPEC_WAN_FW
@@ -1021,18 +1024,17 @@ uptest= none;
 		cd $PREFIX/shadowsocks && mkdir dnsmasq.d
 	fi
 
-	if [ -f "$PREFIX/shadowsocks/ignore.list" ]
-	then
+	if [ -f "$PREFIX/shadowsocks/ignore.list" ]; then
 		rm -f $PREFIX/shadowsocks/ignore.list
-
-	else
-		touch $PREFIX/shadowsocks/ignore.list
 	fi
 
-	RULE_FILE=$PREFIX/shadowsocks/ignore_tmp.txt
-	LINE=$PREFIX/shadowsocks/ignore.list
+	wget -q -t0 -O- 'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | grep ipv4 | grep CN | awk -F\| '{ printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > /var/log/ignore_tmp.txt	
+	
+	IGNORE_TEMP_LIST=/var/log/ignore_tmp.txt
+	IGNORE_LIST=$PREFIX/shadowsocks/ignore.list
 
-	EX_DOMAIN='0.0.0.0/8 
+	cat > $IGNORE_LIST <<-EOF
+	0.0.0.0/8 
 	10.0.0.0/8 
 	100.64.0.0/10 
 	127.0.0.0/8 
@@ -1047,13 +1049,8 @@ uptest= none;
 	203.0.113.0/24 
 	224.0.0.0/4 
 	240.0.0.0/4'
-
-	for each_line in $EX_DOMAIN
-	do
-		echo $each_line >> $LINE
-	done
-
-	wget -q -t0 -O- 'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > $PREFIX/shadowsocks/ignore_tmp.txt
+	$(cat ${IGNORE_TEMP_LIST:=/dev/null} 2>/dev/null)
+	EOF
 	
 	if [ -f "/var/log/pcap_dnsproxy.lock" ]; then
 		rm -f /opt/etc/pcap_dnsproxy/Routing.txt /opt/etc/pcap_dnsproxy/WhiteList.txt
@@ -1115,21 +1112,19 @@ uptest= none;
 	fi			
 
 	rm -f $PREFIX/shadowsocks/dns.list
-	cat $RULE_FILE >> $LINE
-	rm -f $PREFIX/shadowsocks/ignore_tmp.txt
+	rm -f $IGNORE_TEMP_LIST
 	
-	if [ -f "$PREFIX/shadowsocks/update.lock" ]
-	then
+	if [ -f "$PREFIX/shadowsocks/update.lock" ]; then
 		echo '['$DATE'] Has loaded China route table.' > /var/log/chnroutes.log
 	else
 		if [ -f "/var/log/pcap_dnsproxy.lock" ]; then
-			/opt/etc/init.d/S27pcap-dnsproxy restart
+			/opt/etc/init.d/S27pcap-dnsproxy restart			
 			$PREFIX/shadowsocks/shadowsocks flush
 			sleep 1
 			$PREFIX/shadowsocks/shadowsocks rules
-			service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start			
+			service dnsmasq restart		
 		else
-			/opt/etc/init.d/S24chinadns restart
+			/opt/etc/init.d/S24chinadns restart			
 			$PREFIX/shadowsocks/shadowsocks flush
 			sleep 1
 			$PREFIX/shadowsocks/shadowsocks rules
@@ -1209,6 +1204,11 @@ uptest= none;
 		fi
 	fi	
 
+	OLD_WAN_IP=`cat /var/log/wan_ipaddr.log`
+	if [ ! $OLD_WAN_IP == `nvram get wan_ppp_get_ip` ]; then
+		iptables -t nat -I SS_SPEC_WAN_AC 2 -d `nvram get wan_ppp_get_ip` -j RETURN
+	fi	
+	
 	judge=$(cd $PREFIX/shadowsocks && ls | grep "ignore.list" | grep -v "grep")
 	if [ -z "$judge" ]; then
 		exit 0
@@ -1231,7 +1231,6 @@ uptest= none;
 			echo '['$DATE'] iptables rules no problem.' >> /var/log/iptables_rules.log 2>&1
 		else
 			echo '['$DATE'] iptables rules incomplete.' >> /var/log/iptables_rules.log 2>&1
-			rm -f $PREFIX/shadowsocks/flush.lock
 			$PREFIX/shadowsocks/shadowsocks flush
 			$PREFIX/shadowsocks/shadowsocks rules
 		fi
@@ -1240,7 +1239,6 @@ uptest= none;
 			echo '['$DATE'] iptables rules no problem.' >> /var/log/iptables_rules.log 2>&1
 		else
 			echo '['$DATE'] iptables rules incomplete.' >> /var/log/iptables_rules.log 2>&1
-			rm -f $PREFIX/shadowsocks/flush.lock
 			$PREFIX/shadowsocks/shadowsocks flush
 			$PREFIX/shadowsocks/shadowsocks rules
 		fi
@@ -1832,8 +1830,8 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.4.5 $ansi_std"
-	echo -e "$ansi_green # Version: V5.0-6 (MIPS final version) $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.4.8 $ansi_std"
+	echo -e "$ansi_green # Version: V5.0-7 (MIPS final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
