@@ -852,7 +852,7 @@ uptest= none;
 			iptables -t nat -A ADBYBY_AC -m set --set adbyby_wan_ac dst -j RETURN
 			iptables -t nat -A ADBYBY_AC -j ADBYBY_FW
 			iptables -t nat -A ADBYBY_FW -p tcp --dport 80 -j REDIRECT --to-ports 8118
-			iptables -t nat -A PREROUTING -p tcp --dport 80 -m set ! --set adbyby_lan_ac src -j ADBYBY_AC
+			iptables -t nat -I PREROUTING 1 -p tcp --dport 80 -m set ! --set adbyby_lan_ac src -j ADBYBY_AC
 		fi	
 		
 		iptables -t nat -L OUTPUT > /var/log/iptables.txt
@@ -905,7 +905,7 @@ uptest= none;
 			iptables -t nat -A ADBYBY_AC -m set --set adbyby_wan_ac dst -j RETURN
 			iptables -t nat -A ADBYBY_AC -j ADBYBY_FW
 			iptables -t nat -A ADBYBY_FW -p tcp --dport 80 -j REDIRECT --to-ports 8118
-			iptables -t nat -A PREROUTING -p tcp --dport 80 -m set ! --set adbyby_lan_ac src -j ADBYBY_AC
+			iptables -t nat -I PREROUTING 1 -p tcp --dport 80 -m set ! --set adbyby_lan_ac src -j ADBYBY_AC
 		fi			
 		
 		rm -f /var/log/chnroutes.log

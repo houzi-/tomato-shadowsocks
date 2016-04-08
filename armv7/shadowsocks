@@ -91,7 +91,7 @@ case ${1} in
 			mount -o bind $PREFIX/opt /opt
 			cd /opt && wget -O - http://pkg.entware.net/binaries/armv7/installer/entware_install.sh | sh
 			if [ -e $SCRIPT_DIR/china* -a -e $SCRIPT_DIR/cron* -a -e $SCRIPT_DIR/dif* -a -e $SCRIPT_DIR/Pcap_DNS* -a -e $SCRIPT_DIR/pdns* -a -e $SCRIPT_DIR/resol* -a -e $SCRIPT_DIR/shadow* -a -e $SCRIPT_DIR/dnscryp* -a -e $SCRIPT_DIR/zone* -a -e $SCRIPT_DIR/dnsma* ]; then
-				cd $SCRIPT_DIR && opkg install --force-checksum china* pdnsd* pcap* reso* shadow* diff* dnscr* dnsma* cron* zonei*
+				cd $SCRIPT_DIR && opkg install --force-checksum china* pdnsd* pcap* reso* shadow* diff* dnscr* dnsma* cron* zonei* iptables
 				echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
 				sleep 5
 				ln -s $PREFIX/shadowsocks/shadowsocks /opt/bin
@@ -855,6 +855,7 @@ uptest= none;
 #		iptables -t nat -A PREROUTING -p tcp --dport 53 -j DNAT --to-destination $lan_ipaddr:53
 		IFNAME=$(nvram get lan_ifname &> /dev/null)
 		iptables -t nat -I OUTPUT 1 ${IFNAME:+-o $IFNAME} -p tcp -m multiport --dports 22,80,443 -j SS_SPEC_WAN_AC
+		iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 #
 #		ip rule add fwmark 0x01/0x01 table 100
 #		ip route add local 0.0.0.0/0 dev lo table 100
@@ -882,7 +883,7 @@ uptest= none;
 			iptables -t nat -A ADM_AC -m set --match-set adm_wan_ac dst -j RETURN
 			iptables -t nat -A ADM_AC -j ADM_FW
 			iptables -t nat -A ADM_FW -p tcp --dport 80 -j REDIRECT --to-ports 18309
-			iptables -t nat -A PREROUTING -p tcp --dport 80 -m set ! --match-set adm_lan_ac src -j ADM_AC
+			iptables -t nat -I PREROUTING 1 -p tcp --dport 80 -m set ! --match-set adm_lan_ac src -j ADM_AC
 		fi			
 
 		while :
@@ -928,8 +929,10 @@ uptest= none;
 			iptables -t nat -A ADM_AC -m set --match-set adm_wan_ac dst -j RETURN
 			iptables -t nat -A ADM_AC -j ADM_FW
 			iptables -t nat -A ADM_FW -p tcp --dport 80 -j REDIRECT --to-ports 18309
-			iptables -t nat -A PREROUTING -p tcp --dport 80 -m set ! --match-set adm_lan_ac src -j ADM_AC
-		fi			
+			iptables -t nat -I PREROUTING 1 -p tcp --dport 80 -m set ! --match-set adm_lan_ac src -j ADM_AC
+		fi
+		
+		iptables-save | grep -E "gfw_black|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log					
 		
 		rm -f /var/log/chnroutes.log
 		echo "$(date): start gfwlist" >> /var/log/gfwlist.log 
@@ -1123,7 +1126,7 @@ uptest= none;
 	fi
 
 	rm -f $PREFIX/shadowsocks/dns.list
-	rm -f $IGNORE_TEMP_LIST
+	rm -f $IGNORE_TEMP_LIST/ignore_tmp.txt
 	
 	if [ -f "$PREFIX/shadowsocks/update.lock" ]; then
 		echo '['$DATE'] Has loaded China route table.' > /var/log/chnroutes.log
@@ -1242,20 +1245,51 @@ uptest= none;
 	if [ -f "$PREFIX/shadowsocks/ignore.list" ]; then
 		if [ "`iptables -t nat -nvL | grep "SS_SPEC_WAN_AC" | wc -l`" -eq 3 ]; then
 			echo '['$DATE'] iptables rules no problem.' >> /var/log/iptables_rules.log 2>&1
+			iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		else
 			echo '['$DATE'] iptables rules incomplete.' >> /var/log/iptables_rules.log 2>&1
 			rm -f $PREFIX/shadowsocks/flush.lock
 			$PREFIX/shadowsocks/shadowsocks flush
-			$PREFIX/shadowsocks/shadowsocks rules
+
+			restore=/var/log/iptables-restore.log
+			_input=/mnt/sda1/shadowsocks/ignore.list
+			adm_put=/mnt/sda1/shadowsocks/adm_ignore.list
+
+			ipset -N ss_spec_lan_ac hash:net
+			sed -e "s/^/-A ss_spec_wan_ac &/g" -e "1 i\-N ss_spec_wan_ac hash:net " $_input | ipset -R -!
+
+			sed -e "s/^/-A adm_wan_ac &/g" -e "1 i\-N adm_wan_ac hash:net " $adm_put | ipset -R -!
+			ipset -N adm_lan_ac hash:net
+
+			iptables-restore <<-EOF
+			$(cat ${restore:=/dev/null} 2>/dev/null)
+			COMMIT
+			EOF
+
+			iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		fi
 	else
 		if [ "`iptables -t nat -nvL | grep "gfw_black_list" | wc -l`" -eq 2 ]; then
 			echo '['$DATE'] iptables rules no problem.' >> /var/log/iptables_rules.log 2>&1
+			iptables-save | grep -E "gfw_black|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		else
 			echo '['$DATE'] iptables rules incomplete.' >> /var/log/iptables_rules.log 2>&1
 			rm -f $PREFIX/shadowsocks/flush.lock
 			$PREFIX/shadowsocks/shadowsocks flush
-			$PREFIX/shadowsocks/shadowsocks rules
+
+			restore=/var/log/iptables-restore.log
+			adm_put=/mnt/sda1/shadowsocks/adm_ignore.list
+
+			ipset -N gfw_black_list hash:ip
+			sed -e "s/^/-A adm_wan_ac &/g" -e "1 i\-N adm_wan_ac hash:net " $adm_put | ipset -R -!
+			ipset -N adm_lan_ac hash:net
+
+			iptables-restore <<-EOF
+			$(cat ${restore:=/dev/null} 2>/dev/null)
+			COMMIT
+			EOF
+
+			iptables-save | grep -E "gfw_black|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		fi
 	fi
 	;;
@@ -1818,7 +1852,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
 	echo -e "$ansi_green # Last edited: 2016.4.8 $ansi_std"
-	echo -e "$ansi_green # Version: V5.0-7 (ARM final version) $ansi_std"
+	echo -e "$ansi_green # Version: V5.0-6 (ARM final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
