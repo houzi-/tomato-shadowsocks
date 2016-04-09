@@ -498,7 +498,7 @@ uptest= none;
 		echo -e "$BOLD Set programs_3..." $NORM
 		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  /opt/etc/init.d/S22shadowsocks
 		sed '4c PROCS=chinadns' /opt/etc/init.d/S22shadowsocks > /opt/etc/init.d/S24cn
-		sed '5c ARGS="-p 5353 -c /opt/etc/chnroute.txt -s 114.114.114.114,127.0.0.1:1054,208.67.222.222"' /opt/etc/init.d/S24cn > /opt/etc/init.d/S24chinadns
+		sed '5c ARGS="-p 5353 -c /opt/etc/chnroute.txt -s 114.114.114.114,127.0.0.1:1054,208.67.222.222:443"' /opt/etc/init.d/S24cn > /opt/etc/init.d/S24chinadns
 
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S29dnscrypt-proxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start|restart))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
@@ -1048,7 +1048,7 @@ uptest= none;
 	198.51.100.0/24 
 	203.0.113.0/24 
 	224.0.0.0/4 
-	240.0.0.0/4'
+	240.0.0.0/4
 	$(cat ${IGNORE_TEMP_LIST:=/dev/null} 2>/dev/null)
 	EOF
 	
@@ -1226,23 +1226,64 @@ uptest= none;
 	;;
 
 "check_rules" )	
+	restore=/var/log/iptables-restore.log
+
 	if [ -f "$PREFIX/shadowsocks/ignore.list" ]; then
 		if [ "`iptables -t nat -nvL | grep "SS_SPEC_WAN_AC" | wc -l`" -eq 3 ]; then
 			echo '['$DATE'] iptables rules no problem.' >> /var/log/iptables_rules.log 2>&1
+			iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		else
 			echo '['$DATE'] iptables rules incomplete.' >> /var/log/iptables_rules.log 2>&1
 			$PREFIX/shadowsocks/shadowsocks flush
-			$PREFIX/shadowsocks/shadowsocks rules
+			adbyby_put=$PREFIX/shadowsocks/adbyby_ignore.list
+			_input=$PREFIX/shadowsocks/ignore.list
+
+			ipset -N ss_spec_lan_ac iphash
+			ipset -R <<-end
+			-N ss_spec_wan_ac nethash
+			$(egrep -v "^#|^$" $_input | sed -e "s/^/-A ss_spec_wan_ac /")
+			COMMIT
+			end
+
+			if [ "$adbyby_filter" == "1" ]; then
+				ipset -R <<-end
+				-N adbyby_wan_ac nethash
+				$(egrep -v "^#|^$" $adbyby_put | sed -e "s/^/-A adbyby_wan_ac /")
+				COMMIT
+				end
+				ipset -N adbyby_lan_ac iphash
+			fi
+
+			iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		fi
 	else
 		if [ "`iptables -t nat -nvL | grep "gfw_black_list" | wc -l`" -eq 2 ]; then
 			echo '['$DATE'] iptables rules no problem.' >> /var/log/iptables_rules.log 2>&1
+			iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		else
 			echo '['$DATE'] iptables rules incomplete.' >> /var/log/iptables_rules.log 2>&1
 			$PREFIX/shadowsocks/shadowsocks flush
-			$PREFIX/shadowsocks/shadowsocks rules
+			adbyby_put=$PREFIX/shadowsocks/adbyby_ignore.list
+
+			ipset -N gfw_black_list hash:ip
+
+			if [ "$adbyby_filter" == "1" ]; then
+				ipset -R <<-end
+				-N adbyby_wan_ac nethash
+				$(egrep -v "^#|^$" $adbyby_put | sed -e "s/^/-A adbyby_wan_ac /")
+				COMMIT
+				end
+				ipset -N adbyby_lan_ac iphash
+			fi
+
+			iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		fi
 	fi
+
+	iptables-restore <<-EOF
+	$(cat ${restore:=/dev/null} 2>/dev/null)
+	COMMIT
+	EOF
 	;;	
 	
 "ss_switch" )
@@ -1830,7 +1871,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.4.8 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.4.9 $ansi_std"
 	echo -e "$ansi_green # Version: V5.0-7 (MIPS final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"

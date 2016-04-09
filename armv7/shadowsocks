@@ -91,7 +91,8 @@ case ${1} in
 			mount -o bind $PREFIX/opt /opt
 			cd /opt && wget -O - http://pkg.entware.net/binaries/armv7/installer/entware_install.sh | sh
 			if [ -e $SCRIPT_DIR/china* -a -e $SCRIPT_DIR/cron* -a -e $SCRIPT_DIR/dif* -a -e $SCRIPT_DIR/Pcap_DNS* -a -e $SCRIPT_DIR/pdns* -a -e $SCRIPT_DIR/resol* -a -e $SCRIPT_DIR/shadow* -a -e $SCRIPT_DIR/dnscryp* -a -e $SCRIPT_DIR/zone* -a -e $SCRIPT_DIR/dnsma* ]; then
-				cd $SCRIPT_DIR && opkg install --force-checksum china* pdnsd* pcap* reso* shadow* diff* dnscr* dnsma* cron* zonei* iptables
+				cd $SCRIPT_DIR && opkg install --force-checksum china* pdnsd* pcap* reso* shadow* diff* dnscr* dnsma* cron* zonei* 
+				opkg install iptables
 				echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
 				sleep 5
 				ln -s $PREFIX/shadowsocks/shadowsocks /opt/bin
@@ -520,7 +521,7 @@ uptest= none;
 		echo -e "$BOLD Set programs_3..." $NORM
 		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  /opt/etc/init.d/S22shadowsocks
 		sed '4c PROCS=chinadns' /opt/etc/init.d/S22shadowsocks > /opt/etc/init.d/S24cn
-		sed '5c ARGS="-p 5353 -c /opt/etc/chnroute.txt -s 114.114.114.114,127.0.0.1:1054,208.67.222.222"' /opt/etc/init.d/S24cn > /opt/etc/init.d/S24chinadns
+		sed '5c ARGS="-p 5353 -c /opt/etc/chnroute.txt -s 114.114.114.114,127.0.0.1:1054,208.67.222.222:443"' /opt/etc/init.d/S24cn > /opt/etc/init.d/S24chinadns
 
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S29dnscrypt-proxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start|restart))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
@@ -1241,7 +1242,10 @@ uptest= none;
 	fi		
 	;;
 
-"check_rules" )	
+"check_rules" )
+	restore=/var/log/iptables-restore.log
+	adm_put=/mnt/sda1/shadowsocks/adm_ignore.list
+	
 	if [ -f "$PREFIX/shadowsocks/ignore.list" ]; then
 		if [ "`iptables -t nat -nvL | grep "SS_SPEC_WAN_AC" | wc -l`" -eq 3 ]; then
 			echo '['$DATE'] iptables rules no problem.' >> /var/log/iptables_rules.log 2>&1
@@ -1251,20 +1255,15 @@ uptest= none;
 			rm -f $PREFIX/shadowsocks/flush.lock
 			$PREFIX/shadowsocks/shadowsocks flush
 
-			restore=/var/log/iptables-restore.log
 			_input=/mnt/sda1/shadowsocks/ignore.list
-			adm_put=/mnt/sda1/shadowsocks/adm_ignore.list
 
 			ipset -N ss_spec_lan_ac hash:net
 			sed -e "s/^/-A ss_spec_wan_ac &/g" -e "1 i\-N ss_spec_wan_ac hash:net " $_input | ipset -R -!
 
-			sed -e "s/^/-A adm_wan_ac &/g" -e "1 i\-N adm_wan_ac hash:net " $adm_put | ipset -R -!
-			ipset -N adm_lan_ac hash:net
-
-			iptables-restore <<-EOF
-			$(cat ${restore:=/dev/null} 2>/dev/null)
-			COMMIT
-			EOF
+			if [ "$adm_filter" == "1" ]; then
+				sed -e "s/^/-A adm_wan_ac &/g" -e "1 i\-N adm_wan_ac hash:net " $adm_put | ipset -R -!
+				ipset -N adm_lan_ac hash:net
+			fi	
 
 			iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		fi
@@ -1276,22 +1275,22 @@ uptest= none;
 			echo '['$DATE'] iptables rules incomplete.' >> /var/log/iptables_rules.log 2>&1
 			rm -f $PREFIX/shadowsocks/flush.lock
 			$PREFIX/shadowsocks/shadowsocks flush
-
-			restore=/var/log/iptables-restore.log
-			adm_put=/mnt/sda1/shadowsocks/adm_ignore.list
-
+			
 			ipset -N gfw_black_list hash:ip
-			sed -e "s/^/-A adm_wan_ac &/g" -e "1 i\-N adm_wan_ac hash:net " $adm_put | ipset -R -!
-			ipset -N adm_lan_ac hash:net
-
-			iptables-restore <<-EOF
-			$(cat ${restore:=/dev/null} 2>/dev/null)
-			COMMIT
-			EOF
+			
+			if [ "$adm_filter" == "1" ]; then
+				sed -e "s/^/-A adm_wan_ac &/g" -e "1 i\-N adm_wan_ac hash:net " $adm_put | ipset -R -!
+				ipset -N adm_lan_ac hash:net
+			fi	
 
 			iptables-save | grep -E "gfw_black|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		fi
 	fi
+	
+	iptables-restore <<-EOF
+	$(cat ${restore:=/dev/null} 2>/dev/null)
+	COMMIT
+	EOF
 	;;
 	
 "ss_switch" )
@@ -1851,7 +1850,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.4.8 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.4.9 $ansi_std"
 	echo -e "$ansi_green # Version: V5.0-6 (ARM final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
