@@ -90,7 +90,7 @@ case ${1} in
 			cp $SCRIPT_DIR/shadowsocks $PREFIX/shadowsocks
 			mount -o bind $PREFIX/opt /opt
 			cd /opt && wget -O - http://pkg.entware.net/binaries/armv7/installer/entware_install.sh | sh
-			if [ -e $SCRIPT_DIR/china* -a -e $SCRIPT_DIR/cron* -a -e $SCRIPT_DIR/dif* -a -e $SCRIPT_DIR/pcap_dns* -a -e $SCRIPT_DIR/pdns* -a -e $SCRIPT_DIR/resol* -a -e $SCRIPT_DIR/shadow* -a -e $SCRIPT_DIR/dnscryp* -a -e $SCRIPT_DIR/zone* -a -e $SCRIPT_DIR/dnsma* ]; then
+			if [ -e $SCRIPT_DIR/china* -a -e $SCRIPT_DIR/cron* -a -e $SCRIPT_DIR/dif* -a -e $SCRIPT_DIR/pcap_dns* -a -e $SCRIPT_DIR/pdns* -a -e $SCRIPT_DIR/resol* -a -e $SCRIPT_DIR/shadowsocks-libe* -a -e $SCRIPT_DIR/dnscryp* -a -e $SCRIPT_DIR/zone* -a -e $SCRIPT_DIR/dnsma* ]; then
 				cd $SCRIPT_DIR && opkg install --force-checksum china* pdnsd* pcap* reso* shadow* diff* dnscr* dnsma* cron* zonei* 
 				opkg install iptables
 				echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
