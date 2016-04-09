@@ -747,7 +747,7 @@ uptest= none;
 	fi
 
 	if [ "$adbyby_filter" == "1" ]; then
-		if [ ! -f "/var/log/adbyby.lock" ]; then
+		if [ ! -f "/opt/var/log/adbyby.lock" ]; then
 			sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S30adbyby (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 		fi	
 	fi	
@@ -755,7 +755,7 @@ uptest= none;
 	PROCESS=$(ps | grep "ss-redir" | grep -v "grep")
 	if [ -z "$PROCESS" ]; then
 		mount -o bind /opt/sbin/dnsmasq /usr/sbin/dnsmasq && service dnsmasq restart
-#		/opt/etc/init.d/S30adbyby start && touch /var/log/adbyby.lock
+#		/opt/etc/init.d/S30adbyby start && touch /opt/var/log/adbyby.lock
 		/opt/etc/init.d/S22shadowsocks start && touch /var/log/shadowsocks.lock
 #		/opt/etc/init.d/S23ss-tunnel start && touch /var/log/ss-tunnel.lock
 #		/opt/etc/init.d/S26pdnsd start && touch /var/log/pdnsd.lock
@@ -1725,7 +1725,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 					sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S27pcap-dnsproxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 				else
 					sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
-					sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S26pdnsd (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
+					[ -f "/var/log/pdnsd.lock" ] && sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S26pdnsd (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 					sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S29dnscrypt-proxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 				fi
 			else
@@ -1759,6 +1759,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 					killall Pcap_DNSProxy
 					$PREFIX/shadowsocks/shadowsocks flush && $PREFIX/shadowsocks/shadowsocks flush	
 					sleep 1
+					rm -f /opt/var/log/adbyby.lock
 					rm -f /var/log/shadowsocks.lock	
 					rm -f /var/log/pcap_dnsproxy.lock
 				else					
@@ -1777,6 +1778,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 					killall ss-redir && killall chinadns && killall pdnsd && killall dnscrypt-proxy
 					$PREFIX/shadowsocks/shadowsocks flush
 					sleep 1
+					rm -f /opt/var/log/adbyby.lock					
 					rm -f /var/log/chinadns.lock
 					rm -f /var/log/pdnsd.lock
 					rm -f /var/log/shadowsocks.lock
@@ -1797,6 +1799,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 				killall ss-tunnel && killall chinadns
 				$PREFIX/shadowsocks/shadowsocks flush
 				sleep 1
+				rm -f /opt/var/log/adbyby.lock			
 				rm -f /var/log/chinadns.lock
 				rm -f /var/log/shadowsocks.lock
 			fi
@@ -1814,6 +1817,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 			sleep 1
 			killall ss-redir &&killall pdnsd
 			sleep 1
+			rm -f /opt/var/log/adbyby.lock			
 			rm -f /var/log/pdnsd.lock
 			rm -f /var/log/shadowsocks.lock		
 		fi

@@ -778,7 +778,7 @@ uptest= none;
 	fi
 
 	if [ "$adm_filter" == "1" ]; then
-		if [ ! -f "/var/log/admflt.lock" ]; then
+		if [ ! -f "/opt/var/log/admflt.lock" ]; then
 			sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S30adm (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 		fi	
 	fi	
@@ -786,7 +786,7 @@ uptest= none;
 	PROCESS=$(ps | grep "ss-redir" | grep -v "grep")
 	if [ -z "$PROCESS" ]; then
 		mount -o bind /opt/sbin/dnsmasq /usr/sbin/dnsmasq && service dnsmasq restart
-#		/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
+#		/opt/etc/init.d/S30adm start && touch /opt/var/log/admflt.lock
 		/opt/etc/init.d/S22shadowsocks start && touch /var/log/shadowsocks.lock
 #		/opt/etc/init.d/S23ss-tunnel start && touch /var/log/ss-tunnel.lock
 #		/opt/etc/init.d/S26pdnsd start && touch /var/log/pdnsd.lock
@@ -1699,10 +1699,10 @@ Your Choice(Direct enter 0 is Restore Default):"
 			if [ "yes" == $(ask_yes_or_no "ss-redir?") ]; then
 				echo -e $INFO Is updating the plan 1 script......				
 				if [ -f "/var/log/pcap_dnsproxy.lock" ]; then
-					sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S27pcap-dnsproxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
+					sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S27pcap-dnsproxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks 
 				else
 					sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
-					sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S26pdnsd (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
+					[ -f "/var/log/pdnsd.lock" ] && sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S26pdnsd (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 					sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S29dnscrypt-proxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 				fi
 			else
@@ -1737,6 +1737,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 					[ -f "$PREFIX/shadowsocks/flush.lock" ] && rm -f $PREFIX/shadowsocks/flush.lock
 					$PREFIX/shadowsocks/shadowsocks flush	
 					sleep 1
+					rm -f /opt/var/log/admflt.lock
 					rm -f /var/log/shadowsocks.lock	
 					rm -f /var/log/pcap_dnsproxy.lock
 				else					
@@ -1755,6 +1756,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 					[ -f "$PREFIX/shadowsocks/flush.lock" ] && rm -f $PREFIX/shadowsocks/flush.lock
 					$PREFIX/shadowsocks/shadowsocks flush
 					sleep 1
+					rm -f /opt/var/log/admflt.lock					
 					rm -f /var/log/chinadns.lock
 					rm -f /var/log/pdnsd.lock
 					rm -f /var/log/shadowsocks.lock
@@ -1776,6 +1778,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 				[ -f "$PREFIX/shadowsocks/flush.lock" ] && rm -f $PREFIX/shadowsocks/flush.lock
 				$PREFIX/shadowsocks/shadowsocks flush
 				sleep 1
+				rm -f /opt/var/log/admflt.lock				
 				rm -f /var/log/chinadns.lock
 				rm -f /var/log/shadowsocks.lock
 			fi
@@ -1793,6 +1796,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 			sleep 1
 			killall ss-redir &&killall pdnsd
 			sleep 1
+			rm -f /opt/var/log/admflt.lock			
 			rm -f /var/log/pdnsd.lock
 			rm -f /var/log/shadowsocks.lock					
 		fi
