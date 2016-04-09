@@ -829,7 +829,7 @@ uptest= none;
 #		iptables -t nat -A PREROUTING -p tcp --dport 53 -j DNAT --to-destination $lan_ipaddr:53
 		IFNAME=$(nvram get lan_ifname &> /dev/null)
 		iptables -t nat -I OUTPUT 1 ${IFNAME:+-o $IFNAME} -p tcp -m multiport --dports 22,80,443 -j SS_SPEC_WAN_AC
-
+		
 		if [ -f "$PREFIX/shadowsocks/safe.list" ]; then
 			$PREFIX/shadowsocks/safe.sh				
 		fi		
@@ -854,6 +854,8 @@ uptest= none;
 			iptables -t nat -A ADBYBY_FW -p tcp --dport 80 -j REDIRECT --to-ports 8118
 			iptables -t nat -A PREROUTING -p tcp --dport 80 -m set ! --set adbyby_lan_ac src -j ADBYBY_AC
 		fi	
+
+		iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		
 		iptables -t nat -L OUTPUT > /var/log/iptables.txt
 		I=`cat /var/log/iptables.txt|grep -c multiport`
@@ -907,6 +909,8 @@ uptest= none;
 			iptables -t nat -A ADBYBY_FW -p tcp --dport 80 -j REDIRECT --to-ports 8118
 			iptables -t nat -A PREROUTING -p tcp --dport 80 -m set ! --set adbyby_lan_ac src -j ADBYBY_AC
 		fi			
+
+		iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		
 		rm -f /var/log/chnroutes.log
 		echo "$(date): start gfwlist" >> /var/log/gfwlist.log 

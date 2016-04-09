@@ -856,7 +856,6 @@ uptest= none;
 #		iptables -t nat -A PREROUTING -p tcp --dport 53 -j DNAT --to-destination $lan_ipaddr:53
 		IFNAME=$(nvram get lan_ifname &> /dev/null)
 		iptables -t nat -I OUTPUT 1 ${IFNAME:+-o $IFNAME} -p tcp -m multiport --dports 22,80,443 -j SS_SPEC_WAN_AC
-		iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 #
 #		ip rule add fwmark 0x01/0x01 table 100
 #		ip route add local 0.0.0.0/0 dev lo table 100
@@ -887,6 +886,8 @@ uptest= none;
 			iptables -t nat -A PREROUTING -p tcp --dport 80 -m set ! --match-set adm_lan_ac src -j ADM_AC
 		fi			
 
+		iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log		
+		
 		while :
 		do
 			iptables -t nat -L OUTPUT > /var/log/iptables.txt
