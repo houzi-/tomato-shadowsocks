@@ -55,6 +55,8 @@ START_SCRIPT="$ansi_white START_SCRIPT: "
 ShadowSocks_Account="$ansi_white ShadowSocks_Account: "
 DNSMASQ="$ansi_white DNSMASQ: "
 ZONEINFO_ASIA="$ansi_white ZONEINFO_ASIA: "
+mult_switch="$ansi_white mult_switch: "
+ss_switch="$ansi_white ss_switch: "
 
 # You can mount the partition path editing (EP:"/jffs" or "/tmp/mnt/sda1" )
 PREFIX=/jffs
@@ -402,6 +404,7 @@ uptest= none;
 		nvram commit
 		
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		echo 'iptables-save | grep -E "gfw_black|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log' > /opt/etc/cron.5mins/iptables_restore.sh
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh				
 
 		shadowsocks temp
@@ -508,6 +511,7 @@ uptest= none;
 		nvram commit
 
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh		
 
 		shadowsocks temp		
@@ -590,6 +594,7 @@ uptest= none;
 		nvram commit
 	
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/dnscrypt-proxy_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log		
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh	
 
 		shadowsocks temp		
@@ -670,6 +675,7 @@ uptest= none;
 		nvram commit
 	
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/Pcap_DNSProxy_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log		
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh			
 
 		shadowsocks temp
@@ -754,6 +760,7 @@ uptest= none;
 		nvram commit
 	
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/chinadns.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log		
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh			
 
 		shadowsocks temp
@@ -1250,7 +1257,6 @@ uptest= none;
 	if [ -f "$PREFIX/shadowsocks/ignore.list" ]; then
 		if [ "`iptables -t nat -nvL | grep "SS_SPEC_WAN_AC" | wc -l`" -eq 3 ]; then
 			echo '['$DATE'] iptables rules no problem.' >> /var/log/iptables_rules.log 2>&1
-			iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		else
 			echo '['$DATE'] iptables rules incomplete.' >> /var/log/iptables_rules.log 2>&1
 			rm -f $PREFIX/shadowsocks/flush.lock
@@ -1271,7 +1277,6 @@ uptest= none;
 	else
 		if [ "`iptables -t nat -nvL | grep "gfw_black_list" | wc -l`" -eq 2 ]; then
 			echo '['$DATE'] iptables rules no problem.' >> /var/log/iptables_rules.log 2>&1
-			iptables-save | grep -E "gfw_black|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		else
 			echo '['$DATE'] iptables rules incomplete.' >> /var/log/iptables_rules.log 2>&1
 			rm -f $PREFIX/shadowsocks/flush.lock
@@ -1326,10 +1331,24 @@ uptest= none;
 		echo -e "Your Encryption Method: \033[41;37m ${method} \033[0m"
 		echo "============================================"
 
-		resolvip -t 10 ${IP} > /opt/var/log/resolvip.txt
-		RIP=`sed -n '1p' /opt/var/log/resolvip.txt`
-
-		cat > /opt/etc/shadowsocks.json <<-end
+		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
+		if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ]; then
+			echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks ss_switch"$NORM				
+			exit 0					
+		fi		
+		server_ip=/opt/var/log/resolvip_tmp.txt
+		
+		get_server_ip() {
+			cat <<-EOF | grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}"
+				$(cat ${server_ip=:/dev/null} 2>/dev/null)	
+		EOF
+		}
+		echo $(get_server_ip) > /opt/var/log/resolvip.txt
+		sed -i '/^$/d' /opt/var/log/resolvip.txt		
+		if [ -s "/opt/var/log/resolvip.txt" ]; then
+			echo -e -n $ss_switch
+			RIP=`sed -n '1p' /opt/var/log/resolvip.txt`
+			cat > /opt/etc/shadowsocks.json <<-end
 {
     "server":"$RIP",
     "server_port":${port},
@@ -1339,9 +1358,18 @@ uptest= none;
     "timeout":60,
     "method":"${method}"
 }
-		end
-		sed -i '11d' /opt/etc/shadowsocks.json
-		echo ${PORT} > /opt/var/log/local_port.txt
+			end
+			sed -i '11d' /opt/etc/shadowsocks.json
+			echo ${PORT} > /opt/var/log/local_port.txt			
+			sleep 1 
+			echo -e "$ansi_green PASS. $ansi_std"			
+		else
+			echo -e -n $ss_switch
+			sleep 1 
+			echo -e "$ansi_red ERROR. $ansi_std"
+			echo -e "$WARNING Can not write the configuration information, please re-enter your: $ansi_white \nshadowsocks ss_switch"$NORM
+			exit 0			
+		fi	
 	else
 		echo -e $INFO Creating server file...
 		echo "============================================"
@@ -1352,10 +1380,29 @@ uptest= none;
 		echo -e "Your Server IP: \033[41;37m ${IP} \033[0m"
 		echo "============================================"
 
-		resolvip -t 10 ${IP} > /opt/var/log/resolvip.txt
-		RIP=`sed -n '1p' /opt/var/log/resolvip.txt`
-
-		sed -i 's/\("server":"\).*/\1'"$RIP"'",/g' /opt/etc/shadowsocks.json
+		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt		
+		server_ip=/opt/var/log/resolvip_tmp.txt
+		
+		get_server_ip() {
+			cat <<-EOF | grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}"
+				$(cat ${server_ip=:/dev/null} 2>/dev/null)	
+		EOF
+		}
+		echo $(get_server_ip) > /opt/var/log/resolvip.txt
+		sed -i '/^$/d' /opt/var/log/resolvip.txt
+		if [ -s "/opt/var/log/resolvip.txt" ]; then
+			echo -e -n $ss_switch
+			RIP=`sed -n '1p' /opt/var/log/resolvip.txt`
+			sed -i 's/\("server":"\).*/\1'"$RIP"'",/g' /opt/etc/shadowsocks.json
+			sleep 1 
+			echo -e "$ansi_green PASS. $ansi_std"		
+		else
+			echo -e -n $ss_switch
+			sleep 1 
+			echo -e "$ansi_red ERROR. $ansi_std"
+			echo -e "$WARNING Can not write IP, please re-enter your: $ansi_white \nshadowsocks ss_switch"$NORM
+			exit 0
+		fi
 	fi
 
 	echo -e $INFO Please select $BOLD GFWLIST $NORM switch or switch $BOLD CHNROUTES $NORM? "\033[4m yes \033[0m"  or "\033[4m no \033[0m"
@@ -1405,10 +1452,24 @@ Your config:"
 				echo -e "Your Encryption Method: \033[41;37m ${method} \033[0m"
 				echo "============================================"
 				
-				resolvip -t 10 ${IP} > /opt/var/log/resolvip.txt
-				RIP=`sed -n '1p' /opt/var/log/resolvip.txt`
-			
-				cat > /opt/etc/$CONFIG <<-end
+				resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
+				if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ]; then
+					echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks ss_switch"$NORM				
+					exit 0					
+				fi				
+				server_ip=/opt/var/log/resolvip_tmp.txt
+
+				get_server_ip() {
+					cat <<-EOF | grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}"
+						$(cat ${server_ip=:/dev/null} 2>/dev/null)	
+				EOF
+				}
+				echo $(get_server_ip) > /opt/var/log/resolvip.txt
+				sed -i '/^$/d' /opt/var/log/resolvip.txt
+				if [ -s "/opt/var/log/resolvip.txt" ]; then
+					echo -e -n $mult_switch	
+					RIP=`sed -n '1p' /opt/var/log/resolvip.txt`
+					cat > /opt/etc/$CONFIG <<-end
 {
     "server":"$RIP",
     "server_port":${port},
@@ -1418,9 +1479,17 @@ Your config:"
     "timeout":60,
     "method":"${method}"
 }
-				end
-				sed -i '11d' /opt/etc/$CONFIG
-				echo -e $INFO OK!
+					end
+					sed -i '11d' /opt/etc/$CONFIG
+					sleep 1 
+					echo -e "$ansi_green PASS. $ansi_std"
+				else
+					echo -e -n $mult_switch
+					sleep 1 
+					echo -e "$ansi_red ERROR. $ansi_std"
+					echo -e "$WARNING Can not write the configuration information, please re-enter your: $ansi_white \nshadowsocks ss_switch"$NORM
+					exit 0
+				fi
    			else
 				exit 0
    			fi
@@ -1564,12 +1633,12 @@ Your Choice(Direct enter 0 is Restore Default):"
    			read ip
    			if [[ ${ip} != "" ]]  &> /dev/null && echo -e $INFO OK!
    			then
-				get_wan_ip() {
+				get_lan_ip() {
 					cat <<-EOF | grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}"
 						${ip}
 				EOF
 				}
-				echo $(get_wan_ip) >> $PREFIX/shadowsocks/safe.list
+				echo $(get_lan_ip) >> $PREFIX/shadowsocks/safe.list
 				grep -n '^$' $PREFIX/shadowsocks/safe.list > /dev/null;echo $? > /tmp/null.log
 				null=`cat /tmp/null.log`
 				[ "$null" == "0" ] && exit 0
@@ -1594,12 +1663,12 @@ Your Choice(Direct enter 0 is Restore Default):"
    			read ip
    			if [[ ${ip} != "" ]]  &> /dev/null && echo -e $INFO OK!
    			then
-				get_wan_ip() {
+				get_lan_ip() {
 					cat <<-EOF | grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}"
 						${ip}
 				EOF
 				}
-				echo $(get_wan_ip) >> $PREFIX/shadowsocks/safe.list
+				echo $(get_lan_ip) >> $PREFIX/shadowsocks/safe.list
 				grep -n '^$' $PREFIX/shadowsocks/safe.list > /dev/null;echo $? > /tmp/null.log
 				null=`cat /tmp/null.log`
 				[ "$null" == "0" ] && exit 0
