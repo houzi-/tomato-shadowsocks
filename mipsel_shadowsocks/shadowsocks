@@ -1636,10 +1636,10 @@ Your Choice(Direct enter 0 is Restore Default):"
 						${ip}
 				EOF
 				}
-     				echo $(get_wan_ip) >> $PREFIX/shadowsocks/safe.list
-					grep -n '^$' $PREFIX/shadowsocks/safe.list > /dev/null;echo $? > /tmp/null.log
-					null=`cat /tmp/null.log`
-					[ "$null" == "0" ] && exit 0
+				echo $(get_wan_ip) >> $PREFIX/shadowsocks/safe.list
+				grep -n '^$' $PREFIX/shadowsocks/safe.list > /dev/null;echo $? > /tmp/null.log
+				null=`cat /tmp/null.log`
+				[ "$null" == "0" ] && exit 0
 			else
 				safelist=$PREFIX/shadowsocks/safe.list
 				touch /opt/var/log/allowed_within.lock
@@ -1673,10 +1673,10 @@ Your Choice(Direct enter 0 is Restore Default):"
 						${ip}
 				EOF
 				}
-     				echo $(get_wan_ip) >> $PREFIX/shadowsocks/safe.list
-					grep -n '^$' $PREFIX/shadowsocks/safe.list > /dev/null;echo $? > /tmp/null.log
-					null=`cat /tmp/null.log`
-					[ "$null" == "0" ] && exit 0
+				echo $(get_wan_ip) >> $PREFIX/shadowsocks/safe.list
+				grep -n '^$' $PREFIX/shadowsocks/safe.list > /dev/null;echo $? > /tmp/null.log
+				null=`cat /tmp/null.log`
+				[ "$null" == "0" ] && exit 0
 			else
 				safelist=$PREFIX/shadowsocks/safe.list
 				rm -f /opt/var/log/allowed_within.lock
