@@ -1221,7 +1221,7 @@ uptest= none;
 	if [ -f "/var/log/pcap_dnsproxy.lock" ]; then
 		if [ -z "$Pcap_DNSProxy" ]; then
 			echo '['$DATE'] Pcap_DNSProxy abnormal operation, restarting Pcap_DNSProxy.' >> /var/log/Pcap_DNSProxy_watchdog.log 2>&1
-#			/opt/etc/init.d/S27pcap-dnsproxy start
+#			/opt/etc/init.d/S27pcap_dnsproxy start
 		else
 			echo '['$DATE'] No problem, the normal operation of Pcap_DNSProxy.' >> /var/log/Pcap_DNSProxy_watchdog.log 2>&1
 		fi
@@ -1278,7 +1278,12 @@ uptest= none;
 			if [ "$adm_filter" == "1" ]; then
 				sed -e "s/^/-A adm_wan_ac &/g" -e "1 i\-N adm_wan_ac hash:net " $adm_put | ipset -R -!
 				ipset -N adm_lan_ac hash:net
-			fi	
+			fi
+
+			iptables-restore <<-EOF
+			$(cat ${restore:=/dev/null} 2>/dev/null)
+			COMMIT
+			EOF
 
 			iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		fi
@@ -1295,16 +1300,16 @@ uptest= none;
 			if [ "$adm_filter" == "1" ]; then
 				sed -e "s/^/-A adm_wan_ac &/g" -e "1 i\-N adm_wan_ac hash:net " $adm_put | ipset -R -!
 				ipset -N adm_lan_ac hash:net
-			fi	
+			fi
+
+			iptables-restore <<-EOF
+			$(cat ${restore:=/dev/null} 2>/dev/null)
+			COMMIT
+			EOF
 
 			iptables-save | grep -E "gfw_black|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		fi
 	fi
-	
-	iptables-restore <<-EOF
-	$(cat ${restore:=/dev/null} 2>/dev/null)
-	COMMIT
-	EOF
 	;;
 	
 "ss_switch" )
