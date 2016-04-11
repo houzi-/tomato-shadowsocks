@@ -254,21 +254,25 @@ case ${1} in
 	echo -e "Your Encryption Method: \033[41;37m ${method} \033[0m"
 	echo "============================================"
 
-	resolvip -t 10 ${IP} > /opt/var/log/resolvip.txt
-	RIP=`sed -n '1p' /opt/var/log/resolvip.txt`
-	
-	if [ -s "/opt/var/log/resolvip.txt" ]; then
-		echo -e -n $ShadowSocks_Account
-		sleep 1 
-		echo -e "$ansi_green PASS. $ansi_std"
-	else
-		echo -e "$WARNING You enter the account can not be completed shadowsocks resolution, please re-enter your: $ansi_white \nshadowsocks set_up"$NORM
-		exit 0
-	fi	
+	resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
+	if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ]; then
+		echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks set_up"$NORM
+		exit 0					
+	fi		
+	server_ip=/opt/var/log/resolvip_tmp.txt
 
-	echo -e $INFO Creating shadowsocks config file...
-	rm -f /opt/etc/shadowsocks.json
-	cat > /opt/etc/shadowsocks.json <<-end
+	get_server_ip() {
+		cat <<-EOF | grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}"
+			$(cat ${server_ip=:/dev/null} 2>/dev/null)	
+	EOF
+	}
+	echo $(get_server_ip) > /opt/var/log/resolvip.txt
+	sed -i '/^$/d' /opt/var/log/resolvip.txt
+	if [ -s "/opt/var/log/resolvip.txt" ]; then
+		RIP=`sed -n '1p' /opt/var/log/resolvip.txt`
+		echo -e $INFO Creating shadowsocks config file...
+		rm -f /opt/etc/shadowsocks.json
+		cat > /opt/etc/shadowsocks.json <<-end
 	{
     "server":"$RIP",
     "server_port":${port},
@@ -278,9 +282,13 @@ case ${1} in
     "timeout":60,
     "method":"${method}"
 	}
-	end
-	sed -i '11d' /opt/etc/shadowsocks.json
-	echo ${PORT} > /opt/var/log/local_port.txt	
+		end
+		sed -i '11d' /opt/etc/shadowsocks.json
+		echo ${PORT} > /opt/var/log/local_port.txt
+	else
+		echo -e "$WARNING Can not write the configuration information, please re-enter your: $ansi_white \nshadowsocks set_up"$NORM
+		exit 0
+	fi		
 	
 	echo -e $INFO Please confirm your shadowsocks and dnsmasq information with "\033[4m yes \033[0m"  or "\033[4m no \033[0m"  to exit
 	if [ "no" == $(ask_yes_or_no "Is your config above correct?") ]; then
@@ -798,7 +806,7 @@ uptest= none;
 #		/opt/etc/init.d/S23ss-tunnel start && touch /var/log/ss-tunnel.lock
 #		/opt/etc/init.d/S26pdnsd start && touch /var/log/pdnsd.lock
 #		/opt/etc/init.d/S24chinadns start && touch /var/log/chinadns.lock
-#		/opt/etc/init.d/S27pcap-dnsproxy start && touch /var/log/pcap_dnsproxy.lock
+#		/opt/etc/init.d/S27pcap_dnsproxy start && touch /var/log/pcap_dnsproxy.lock
 #		/opt/etc/init.d/S29dnscrypt-proxy start && touch /var/log/dnscrypt-proxy.lock
 		/opt/etc/init.d/S00timezone start
 		/opt/etc/init.d/S10cron start
@@ -1076,7 +1084,7 @@ uptest= none;
 	EOF
 
 	if [ -f "/var/log/pcap_dnsproxy.lock" ]; then
-		rm -f /opt/etc/pcap_dnsproxy/Routing.txt /opt/etc/pcap_dnsproxy/WhiteList.txt
+		rm -f /opt/etc/pcap-dnsproxy/Routing.txt /opt/etc/pcap-dnsproxy/WhiteList.txt
 
 		# Update Local Hosts
 		cd /tmp;curl -s --insecure -O https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf
@@ -1100,7 +1108,7 @@ uptest= none;
 		sleep 1
 		echo -e "            $ansi_green done. $ansi_std"
 
-		cp /tmp/WhiteList.txt /opt/etc/pcap_dnsproxy
+		cp /tmp/WhiteList.txt /opt/etc/pcap-dnsproxy
 		rm -f /tmp/WhiteList_tmp.txt /tmp/WhiteList.txt /tmp/accelerated-domains.china.conf /tmp/google.china.conf
 	
 		# Update Local Routing
@@ -1124,7 +1132,7 @@ uptest= none;
 		sleep 1
 		echo -e "            $ansi_green done. $ansi_std" 
 	
-		cp /tmp/Routing.txt /opt/etc/pcap_dnsproxy
+		cp /tmp/Routing.txt /opt/etc/pcap-dnsproxy
 		rm -f /tmp/Routing_IPv4.txt /tmp/Routing_IPv4_tmp.txt /tmp/Routing_IPv6.txt /tmp/Routing_IPv6_tmp.txt /tmp/Routing.txt
 	else
 		wget -q -t0 -O- 'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > /opt/etc/chnroute.txt
@@ -1203,7 +1211,7 @@ uptest= none;
 	if [ -f "/var/log/dnscrypt-proxy.lock" ]; then
 		if [ -z "$dnscrypt" ]; then
 			echo '['$DATE'] dnscrypt-proxy abnormal operation, restarting dnscrypt-proxy.' >> /var/log/dnscrypt-proxy_watchdog.log 2>&1
-#			/opt/etc/init.d/S29dnscrypt-proxy start
+#			/opt/etc/init.d/S29dnscrypt_proxy start
 		else
 			echo '['$DATE'] No problem, the normal operation of dnscrypt-proxy.' >> /var/log/dnscrypt-proxy_watchdog.log 2>&1
 		fi
@@ -1380,7 +1388,11 @@ uptest= none;
 		echo -e "Your Server IP: \033[41;37m ${IP} \033[0m"
 		echo "============================================"
 
-		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt		
+		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
+		if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ]; then
+			echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks mult_switch"$NORM				
+			exit 0					
+		fi		
 		server_ip=/opt/var/log/resolvip_tmp.txt
 		
 		get_server_ip() {
@@ -1454,7 +1466,7 @@ Your config:"
 				
 				resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
 				if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ]; then
-					echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks ss_switch"$NORM				
+					echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks mult_switch"$NORM				
 					exit 0					
 				fi				
 				server_ip=/opt/var/log/resolvip_tmp.txt
@@ -1487,7 +1499,7 @@ Your config:"
 					echo -e -n $mult_switch
 					sleep 1 
 					echo -e "$ansi_red ERROR. $ansi_std"
-					echo -e "$WARNING Can not write the configuration information, please re-enter your: $ansi_white \nshadowsocks ss_switch"$NORM
+					echo -e "$WARNING Can not write the configuration information, please re-enter your: $ansi_white \nshadowsocks mult_switch"$NORM
 					exit 0
 				fi
    			else
@@ -1942,7 +1954,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.4.10 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.4.11 $ansi_std"
 	echo -e "$ansi_green # Version: V5.0-6 (ARM final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
