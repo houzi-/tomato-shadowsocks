@@ -412,7 +412,7 @@ uptest= none;
 		nvram commit
 		
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
-		echo 'iptables-save | grep -E "gfw_black|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log' > /opt/etc/cron.5mins/iptables_restore.sh
+		echo 'iptables-save | grep -E "gfw_black|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log' > $CHECK/cron.5mins/iptables_restore.sh
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh				
 
 		shadowsocks temp
@@ -519,7 +519,7 @@ uptest= none;
 		nvram commit
 
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
-		iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
+		echo 'iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log' > $CHECK/cron.5mins/iptables_restore.sh
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh		
 
 		shadowsocks temp		
@@ -602,7 +602,7 @@ uptest= none;
 		nvram commit
 	
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/dnscrypt-proxy_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
-		iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log		
+		echo 'iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log' > $CHECK/cron.5mins/iptables_restore.sh	
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh	
 
 		shadowsocks temp		
@@ -683,7 +683,7 @@ uptest= none;
 		nvram commit
 	
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/Pcap_DNSProxy_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
-		iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log		
+		echo 'iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log' > $CHECK/cron.5mins/iptables_restore.sh		
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh			
 
 		shadowsocks temp
@@ -768,7 +768,7 @@ uptest= none;
 		nvram commit
 	
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/chinadns.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
-		iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log		
+		echo 'iptables-save | grep -E "SS_SPEC|ADM_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log' > $CHECK/cron.5mins/iptables_restore.sh		
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh			
 
 		shadowsocks temp

@@ -383,6 +383,7 @@ uptest= none;
 		nvram commit
 
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		echo 'iptables-save | grep -E "gfw_black|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log' > /opt/etc/cron.5mins/iptables_restore.sh		
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh		
 
 		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
@@ -487,6 +488,7 @@ uptest= none;
 		nvram commit	
 
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/pdnsd_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		echo 'iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log' > $CHECK/cron.5mins/iptables_restore.sh		
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh	
 
 		rm -f $PREFIX/shadowsocks/update.lock
@@ -567,6 +569,7 @@ uptest= none;
 		nvram commit
 
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/dnscrypt-proxy_watchdog.log \necho \"\" > /var/log/chinadns_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		echo 'iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log' > $CHECK/cron.5mins/iptables_restore.sh		
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh
 
 		/opt/etc/init.d/S29dnscrypt-proxy start
@@ -645,6 +648,7 @@ uptest= none;
 		nvram commit
 
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/Pcap_DNSProxy_watchdog.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		echo 'iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log' > $CHECK/cron.5mins/iptables_restore.sh		
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh	
 
 		rm -f $PREFIX/shadowsocks/update.lock
@@ -727,6 +731,7 @@ uptest= none;
 		nvram commit
 
 		echo -e "echo \"\" > /var/log/shadowsocks_watchdog.log \necho \"\" > /var/log/chinadns.log \necho \"\" > /var/log/iptables_rules.log" > $CHECK/cron.5mins/clear_log.sh
+		echo 'iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log' > $CHECK/cron.5mins/iptables_restore.sh		
 		echo -e "shadowsocks check \nshadowsocks check_rules" > $CHECK/cron.1min/check.sh
 			
 		rm -f $PREFIX/shadowsocks/update.lock
@@ -1235,7 +1240,6 @@ uptest= none;
 	if [ -f "$PREFIX/shadowsocks/ignore.list" ]; then
 		if [ "`iptables -t nat -nvL | grep "SS_SPEC_WAN_AC" | wc -l`" -eq 3 ]; then
 			echo '['$DATE'] iptables rules no problem.' >> /var/log/iptables_rules.log 2>&1
-			iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		else
 			echo '['$DATE'] iptables rules incomplete.' >> /var/log/iptables_rules.log 2>&1
 			$PREFIX/shadowsocks/shadowsocks flush
@@ -1258,12 +1262,16 @@ uptest= none;
 				ipset -N adbyby_lan_ac iphash
 			fi
 
+			iptables-restore <<-EOF
+			$(cat ${restore:=/dev/null} 2>/dev/null)
+			COMMIT
+			EOF
+			
 			iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		fi
 	else
 		if [ "`iptables -t nat -nvL | grep "gfw_black_list" | wc -l`" -eq 2 ]; then
 			echo '['$DATE'] iptables rules no problem.' >> /var/log/iptables_rules.log 2>&1
-			iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		else
 			echo '['$DATE'] iptables rules incomplete.' >> /var/log/iptables_rules.log 2>&1
 			$PREFIX/shadowsocks/shadowsocks flush
@@ -1279,15 +1287,15 @@ uptest= none;
 				end
 				ipset -N adbyby_lan_ac iphash
 			fi
-
-			iptables-save | grep -E "SS_SPEC|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
+			
+			iptables-restore <<-EOF
+			$(cat ${restore:=/dev/null} 2>/dev/null)
+			COMMIT
+			EOF
+			
+			iptables-save | grep -E "gfw_black|ADBYBY_|WANPREROUTING|POSTROUTING|^\*nat" > /var/log/iptables-restore.log
 		fi
 	fi
-
-	iptables-restore <<-EOF
-	$(cat ${restore:=/dev/null} 2>/dev/null)
-	COMMIT
-	EOF
 	;;	
 	
 "ss_switch" )
