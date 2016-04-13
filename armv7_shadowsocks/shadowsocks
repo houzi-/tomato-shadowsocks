@@ -279,8 +279,8 @@ case ${1} in
 	if [ -s "/opt/var/log/resolvip.txt" ]; then
 		RIP=`sed -n '1p' /opt/var/log/resolvip.txt`
 		echo -e $INFO Creating shadowsocks config file...
-		rm -f /opt/etc/shadowsocks.json
-		cat > /opt/etc/shadowsocks.json <<-end
+		rm -f $CHECK/shadowsocks.json
+		cat > $CHECK/shadowsocks.json <<-end
 	{
     "server":"$RIP",
     "server_port":${port},
@@ -291,7 +291,7 @@ case ${1} in
     "method":"${method}"
 	}
 		end
-		sed -i '11d' /opt/etc/shadowsocks.json
+		sed -i '11d' $CHECK/shadowsocks.json
 		echo ${PORT} > /opt/var/log/local_port.txt
 	else
 		echo -e "$WARNING Can not write the configuration information, please re-enter your: $ansi_white \nshadowsocks set_up"$NORM
@@ -302,14 +302,14 @@ case ${1} in
 	if [ "no" == $(ask_yes_or_no "Is your config above correct?") ]; then
 		echo -e $INFO Re-setting...
   		echo -e $INFO Exiting...
-		rm -f /opt/etc/shadowsocks.json
+		rm -f $CHECK/shadowsocks.json
   		exit 0 
 	fi	
 	
 #	echo -e $INFO enable udprelay mode? "\033[4m yes \033[0m"  or "\033[4m no \033[0m"
 #	if [ "yes" == $(ask_yes_or_no "enable udprelay?") ]; then
 #		echo -e $INFO enable udprelay...
-#		sed -i s'/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-u -c \/opt\/etc\/shadowsocks.json"/g' /opt/etc/init.d/S22shadowsocks
+#		sed -i s'/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-u -c \/opt\/etc\/shadowsocks.json"/g' $CHECK/init.d/S22shadowsocks
 #		sed -r 's/#(['$'\t'' ]*ip rule add fwmark 0x01\/0x01 table 100)/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 #		sed -r 's/#(['$'\t'' ]*ip route add local 0.0.0.0\/0 dev lo table 100)/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 #		sed -r 's/#(['$'\t'' ]*iptables -t mangle -N SS_SPEC_TPROXY)/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
@@ -330,8 +330,8 @@ Your Choice:"
 	read programs
 	if [ $programs == "1" ];then
 		echo -e "$BOLD Set programs_1..." $NORM
-		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  /opt/etc/init.d/S22shadowsocks
-		sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks.json  > $PREFIX/opt/var/log/server.txt
+		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  $CHECK/init.d/S22shadowsocks
+		sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json  > $PREFIX/opt/var/log/server.txt
 
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S26pdnsd (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 #		sleep 1
@@ -359,7 +359,7 @@ Your Choice:"
 
 		service dnsmasq restart		
 
-		echo UTC-8 > /opt/etc/TZ		
+		echo UTC-8 > $CHECK/TZ		
 		$PREFIX/shadowsocks/shadowsocks run
 		touch /var/log/ipset.lock
 		$PREFIX/shadowsocks/shadowsocks ipset
@@ -387,8 +387,8 @@ Your Choice:"
 		nvram set ntp_tdod="0"
 		nvram set ntp_updates="1"		
 
-		rm -f /opt/etc/pdnsd.conf
-		cat > /opt/etc/pdnsd.conf <<-end
+		rm -f $CHECK/pdnsd.conf
+		cat > $CHECK/pdnsd.conf <<-end
 global {
 perm_cache=2048;
 cache_dir="/var/pdnsd";
@@ -430,9 +430,9 @@ uptest= none;
 		killall shadowsocks > /dev/null
 	elif [ $programs == "2" ];then
 		echo -e "$BOLD Set programs_2..." $NORM
-		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  /opt/etc/init.d/S22shadowsocks
-		sed '4c PROCS=chinadns' /opt/etc/init.d/S22shadowsocks > /opt/etc/init.d/S24cn
-		sed '5c ARGS="-p 5353 -c /opt/etc/chnroute.txt -s 114.114.114.114,127.0.0.1:1054"' /opt/etc/init.d/S24cn > /opt/etc/init.d/S24chinadns
+		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  $CHECK/init.d/S22shadowsocks
+		sed '4c PROCS=chinadns' $CHECK/init.d/S22shadowsocks > $CHECK/init.d/S24cn
+		sed '5c ARGS="-p 5353 -c /opt/etc/chnroute.txt -s 114.114.114.114,127.0.0.1:1054"' $CHECK/init.d/S24cn > $CHECK/init.d/S24chinadns
 
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S26pdnsd (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start|restart))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
@@ -441,15 +441,15 @@ uptest= none;
 
 		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
 		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
-		sed -i "s/^ARGS=\(.*\)114.114.114.114\(.*\)$/ARGS=\1$DNS\2/" /opt/etc/init.d/S24chinadns
+		sed -i "s/^ARGS=\(.*\)114.114.114.114\(.*\)$/ARGS=\1$DNS\2/" $CHECK/init.d/S24chinadns
 	
-		rm -f /opt/etc/init.d/S24cn
-		chmod +x /opt/etc/init.d/S2*
+		rm -f $CHECK/init.d/S24cn
+		chmod +x $CHECK/init.d/S2*
 
 		sleep 1
 		echo -e $INFO Creating pdnsd.conf file...
-		rm -f /opt/etc/pdnsd.conf
-		cat > /opt/etc/pdnsd.conf <<-end
+		rm -f $CHECK/pdnsd.conf
+		cat > $CHECK/pdnsd.conf <<-end
 global {
 perm_cache=2048;
 cache_dir="/var/pdnsd";
@@ -493,7 +493,7 @@ uptest= none;
 
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
-		echo UTC-8 > /opt/etc/TZ		
+		echo UTC-8 > $CHECK/TZ		
 		$PREFIX/shadowsocks/shadowsocks run
 		sleep 4
 		$PREFIX/shadowsocks/shadowsocks ipset
@@ -539,9 +539,9 @@ uptest= none;
 		killall shadowsocks > /dev/null
 	elif [ $programs == "3" ];then
 		echo -e "$BOLD Set programs_3..." $NORM
-		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  /opt/etc/init.d/S22shadowsocks
-		sed '4c PROCS=chinadns' /opt/etc/init.d/S22shadowsocks > /opt/etc/init.d/S24cn
-		sed '5c ARGS="-p 5353 -c /opt/etc/chnroute.txt -s 114.114.114.114,127.0.0.1:1054,208.67.222.222:443"' /opt/etc/init.d/S24cn > /opt/etc/init.d/S24chinadns
+		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  $CHECK/init.d/S22shadowsocks
+		sed '4c PROCS=chinadns' $CHECK/init.d/S22shadowsocks > $CHECK/init.d/S24cn
+		sed '5c ARGS="-p 5353 -c /opt/etc/chnroute.txt -s 114.114.114.114,127.0.0.1:1054,208.67.222.222:443"' $CHECK/init.d/S24cn > $CHECK/init.d/S24chinadns
 
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S29dnscrypt-proxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start|restart))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
@@ -549,10 +549,10 @@ uptest= none;
 
 		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
 		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
-		sed -i "s/^ARGS=\(.*\)114.114.114.114\(.*\)$/ARGS=\1$DNS\2/" /opt/etc/init.d/S24chinadns
+		sed -i "s/^ARGS=\(.*\)114.114.114.114\(.*\)$/ARGS=\1$DNS\2/" $CHECK/init.d/S24chinadns
 
-		rm -f /opt/etc/init.d/S24cn
-		chmod +x /opt/etc/init.d/S2*
+		rm -f $CHECK/init.d/S24cn
+		chmod +x $CHECK/init.d/S2*
 
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
@@ -576,7 +576,7 @@ uptest= none;
 
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
-		echo UTC-8 > /opt/etc/TZ		
+		echo UTC-8 > $CHECK/TZ		
 		$PREFIX/shadowsocks/shadowsocks run
 		sleep 4
 		$PREFIX/shadowsocks/shadowsocks ipset
@@ -623,7 +623,7 @@ uptest= none;
 		killall shadowsocks > /dev/null
 	elif [ $programs == "4" ];then
 		echo -e "$BOLD Set programs_4..." $NORM
-		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  /opt/etc/init.d/S22shadowsocks
+		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  $CHECK/init.d/S22shadowsocks
 
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S27pcap-dnsproxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 		sed -i 's/^#\([ \t]\+iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5353\)/\1/' $PREFIX/shadowsocks/shadowsocks
@@ -657,7 +657,7 @@ uptest= none;
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
 		touch /var/log/pcap_dnsproxy.lock
-		echo UTC-8 > /opt/etc/TZ		
+		echo UTC-8 > $CHECK/TZ		
 		$PREFIX/shadowsocks/shadowsocks run
 		sleep 4
 		$PREFIX/shadowsocks/shadowsocks ipset
@@ -703,10 +703,10 @@ uptest= none;
 		killall shadowsocks > /dev/null
 	elif [ $programs == "5" ];then
 		echo -e "$BOLD Set programs_5..." $NORM
-		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  /opt/etc/init.d/S22shadowsocks
-		sed -e "s/shadowsocks.json\"/shadowsocks.json -b 0.0.0.0 -l 5300 -L 8.8.8.8:53 -u\"/" -e "s/PROCS=ss-redir/PROCS=ss-tunnel/" /opt/etc/init.d/S22shadowsocks > /opt/etc/init.d/S23ss-tunnel
-		sed '4c PROCS=chinadns' /opt/etc/init.d/S22shadowsocks > /opt/etc/init.d/S24cn
-		sed '5c ARGS="-p 5353 -l /opt/etc/chinadns_iplist.txt -c /opt/etc/chnroute.txt -s 114.114.114.114,127.0.0.1:5300"' /opt/etc/init.d/S24cn > /opt/etc/init.d/S24chinadns
+		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  $CHECK/init.d/S22shadowsocks
+		sed -e "s/shadowsocks.json\"/shadowsocks.json -b 0.0.0.0 -l 5300 -L 8.8.8.8:53 -u\"/" -e "s/PROCS=ss-redir/PROCS=ss-tunnel/" $CHECK/init.d/S22shadowsocks > $CHECK/init.d/S23ss-tunnel
+		sed '4c PROCS=chinadns' $CHECK/init.d/S22shadowsocks > $CHECK/init.d/S24cn
+		sed '5c ARGS="-p 5353 -l /opt/etc/chinadns_iplist.txt -c /opt/etc/chnroute.txt -s 114.114.114.114,127.0.0.1:5300"' $CHECK/init.d/S24cn > $CHECK/init.d/S24chinadns
 		
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S23ss-tunnel (start|restart))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start|restart))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
@@ -715,10 +715,10 @@ uptest= none;
 
 		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
 		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
-		sed -i "s/^ARGS=\(.*\)114.114.114.114\(.*\)$/ARGS=\1$DNS\2/" /opt/etc/init.d/S24chinadns
+		sed -i "s/^ARGS=\(.*\)114.114.114.114\(.*\)$/ARGS=\1$DNS\2/" $CHECK/init.d/S24chinadns
 	
-		rm -f /opt/etc/init.d/S24cn
-		chmod +x /opt/etc/init.d/S2*
+		rm -f $CHECK/init.d/S24cn
+		chmod +x $CHECK/init.d/S2*
 
 		echo -e $INFO Configuring dnsmasq_custom...
 		sleep 1
@@ -742,7 +742,7 @@ uptest= none;
 			
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
-		echo UTC-8 > /opt/etc/TZ		
+		echo UTC-8 > $CHECK/TZ		
 		$PREFIX/shadowsocks/shadowsocks run
 		sleep 4
 		$PREFIX/shadowsocks/shadowsocks ipset
@@ -792,7 +792,7 @@ uptest= none;
 "run" )
 	touch $PREFIX/shadowsocks/flush.lock
 
-	sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks.json  > /var/log/server.txt
+	sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json  > /var/log/server.txt
 	
 	if [ -f "$PREFIX/shadowsocks/chnroutes.lock" ]; then
 		$PREFIX/shadowsocks/shadowsocks update
@@ -850,8 +850,8 @@ uptest= none;
 "rules" )
 	_input=$PREFIX/shadowsocks/ignore.list
 	
-	sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks.json  > $PREFIX/opt/var/log/server.txt	
-	SS=`sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks.json`
+	sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json  > $PREFIX/opt/var/log/server.txt	
+	SS=`sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json`
 
 	PORT=`sed -n '1p' /opt/var/log/local_port.txt`	
 	
@@ -1092,7 +1092,7 @@ uptest= none;
 	EOF
 
 	if [ -f "/var/log/pcap_dnsproxy.lock" ]; then
-		rm -f /opt/etc/pcap-dnsproxy/Routing.txt /opt/etc/pcap-dnsproxy/WhiteList.txt
+		rm -f $CHECK/pcap-dnsproxy/Routing.txt $CHECK/pcap-dnsproxy/WhiteList.txt
 
 		# Update Local Hosts
 		cd /tmp;curl -s --insecure -O https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf
@@ -1116,7 +1116,7 @@ uptest= none;
 		sleep 1
 		echo -e "            $ansi_green done. $ansi_std"
 
-		cp /tmp/WhiteList.txt /opt/etc/pcap-dnsproxy
+		cp /tmp/WhiteList.txt $CHECK/pcap-dnsproxy
 		rm -f /tmp/WhiteList_tmp.txt /tmp/WhiteList.txt /tmp/accelerated-domains.china.conf /tmp/google.china.conf
 	
 		# Update Local Routing
@@ -1140,10 +1140,10 @@ uptest= none;
 		sleep 1
 		echo -e "            $ansi_green done. $ansi_std" 
 	
-		cp /tmp/Routing.txt /opt/etc/pcap-dnsproxy
+		cp /tmp/Routing.txt $CHECK/pcap-dnsproxy
 		rm -f /tmp/Routing_IPv4.txt /tmp/Routing_IPv4_tmp.txt /tmp/Routing_IPv6.txt /tmp/Routing_IPv6_tmp.txt /tmp/Routing.txt
 	else
-		wget -q -t0 -O- 'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > /opt/etc/chnroute.txt
+		wget -q -t0 -O- 'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > $CHECK/chnroute.txt
 		cd $PREFIX/shadowsocks/dnsmasq.d/;curl -s --insecure -O https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf;cd /
 		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
 		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
@@ -1334,7 +1334,7 @@ uptest= none;
 	echo -e $INFO Please select $BOLD server $NORM or $BOLD JSON file $NORM? "\033[4m yes \033[0m"  or "\033[4m no \033[0m"
 	if [ "yes" == $(ask_yes_or_no "Select JSON file?") ]; then
 		echo -e $INFO Creating JSON file...
-		rm -f /opt/etc/shadowsocks.json
+		rm -f $CHECK/shadowsocks.json
 
 		echo "============================================"
 		echo "Please input your shadowsocks account imformation:"
@@ -1369,7 +1369,7 @@ uptest= none;
 		if [ -s "/opt/var/log/resolvip.txt" ]; then
 			echo -e -n $ss_switch
 			RIP=`sed -n '1p' /opt/var/log/resolvip.txt`
-			cat > /opt/etc/shadowsocks.json <<-end
+			cat > $CHECK/shadowsocks.json <<-end
 {
     "server":"$RIP",
     "server_port":${port},
@@ -1380,7 +1380,7 @@ uptest= none;
     "method":"${method}"
 }
 			end
-			sed -i '11d' /opt/etc/shadowsocks.json
+			sed -i '11d' $CHECK/shadowsocks.json
 			echo ${PORT} > /opt/var/log/local_port.txt			
 			sleep 1 
 			echo -e "$ansi_green PASS. $ansi_std"			
@@ -1418,7 +1418,7 @@ uptest= none;
 		if [ -s "/opt/var/log/resolvip.txt" ]; then
 			echo -e -n $ss_switch
 			RIP=`sed -n '1p' /opt/var/log/resolvip.txt`
-			sed -i 's/\("server":"\).*/\1'"$RIP"'",/g' /opt/etc/shadowsocks.json
+			sed -i 's/\("server":"\).*/\1'"$RIP"'",/g' $CHECK/shadowsocks.json
 			sleep 1 
 			echo -e "$ansi_green PASS. $ansi_std"		
 		else
@@ -1494,7 +1494,7 @@ Your config:"
 				if [ -s "/opt/var/log/resolvip.txt" ]; then
 					echo -e -n $mult_switch	
 					RIP=`sed -n '1p' /opt/var/log/resolvip.txt`
-					cat > /opt/etc/$CONFIG <<-end
+					cat > $CHECK/$CONFIG <<-end
 {
     "server":"$RIP",
     "server_port":${port},
@@ -1505,7 +1505,7 @@ Your config:"
     "method":"${method}"
 }
 					end
-					sed -i '11d' /opt/etc/$CONFIG
+					sed -i '11d' $CHECK/$CONFIG
 					sleep 1 
 					echo -e "$ansi_green PASS. $ansi_std"
 				else
@@ -1537,44 +1537,44 @@ Your Choice(Direct enter 0 is Restore Default):"
 	then
 		echo -e "$BOLD Restore Default..." $NORM
 		JSON=`sed -n '1p' /opt/var/log/shadowsocks.log`
-		sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks.json  > /opt/var/log/resolvip.txt
-		sed -i 's/'"$JSON"'/ARGS="-c \/opt\/etc\/shadowsocks.json"/g' /opt/etc/init.d/S22shadowsocks   
+		sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json  > /opt/var/log/resolvip.txt
+		sed -i 's/'"$JSON"'/ARGS="-c \/opt\/etc\/shadowsocks.json"/g' $CHECK/init.d/S22shadowsocks   
 	elif [ $ShadowSocks = "1" ];
 	then
 		echo -e "$BOLD Set ShadowSocks_1..." $NORM 
 		echo 'ARGS="-c \/opt\/etc\/shadowsocks_1.json"' > /opt/var/log/shadowsocks.log
-		sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks_1.json  > /opt/var/log/resolvip.txt
-		sed -i 's/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-c \/opt\/etc\/shadowsocks_1.json"/g' /opt/etc/init.d/S22shadowsocks
+		sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks_1.json  > /opt/var/log/resolvip.txt
+		sed -i 's/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-c \/opt\/etc\/shadowsocks_1.json"/g' $CHECK/init.d/S22shadowsocks
 	elif [ $ShadowSocks = "2" ];
 	then
 		echo -e "$BOLD Set ShadowSocks_2..." $NORM
 		echo 'ARGS="-c \/opt\/etc\/shadowsocks_2.json"' > /opt/var/log/shadowsocks.log
-		sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks_2.json  > /opt/var/log/resolvip.txt
-		sed -i 's/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-c \/opt\/etc\/shadowsocks_2.json"/g' /opt/etc/init.d/S22shadowsocks
+		sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks_2.json  > /opt/var/log/resolvip.txt
+		sed -i 's/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-c \/opt\/etc\/shadowsocks_2.json"/g' $CHECK/init.d/S22shadowsocks
 	elif [ $ShadowSocks = "3" ];
 	then
 		echo -e "$BOLD Set ShadowSocks_3..." $NORM
 		echo 'ARGS="-c \/opt\/etc\/shadowsocks_3.json"' > /opt/var/log/shadowsocks.log
-		sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks_3.json  > /opt/var/log/resolvip.txt
-		sed -i 's/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-c \/opt\/etc\/shadowsocks_3.json"/g' /opt/etc/init.d/S22shadowsocks
+		sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks_3.json  > /opt/var/log/resolvip.txt
+		sed -i 's/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-c \/opt\/etc\/shadowsocks_3.json"/g' $CHECK/init.d/S22shadowsocks
 	elif [ $ShadowSocks = "4" ];
 	then
 		echo -e "$BOLD Set ShadowSocks_4..." $NORM
 		echo 'ARGS="-c \/opt\/etc\/shadowsocks_4.json"' > /opt/var/log/shadowsocks.log
-		sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks_4.json  > /opt/var/log/resolvip.txt
-		sed -i 's/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-c \/opt\/etc\/shadowsocks_4.json"/g' /opt/etc/init.d/S22shadowsocks
+		sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks_4.json  > /opt/var/log/resolvip.txt
+		sed -i 's/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-c \/opt\/etc\/shadowsocks_4.json"/g' $CHECK/init.d/S22shadowsocks
 	elif [ $ShadowSocks = "5" ];
 	then
 		echo -e "$BOLD Set ShadowSocks_5..." $NORM
 		echo 'ARGS="-c \/opt\/etc\/shadowsocks_5.json"' > /opt/var/log/shadowsocks.log
-		sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks_5.json  > /opt/var/log/resolvip.txt
-		sed -i 's/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-c \/opt\/etc\/shadowsocks_5.json"/g' /opt/etc/init.d/S22shadowsocks
+		sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks_5.json  > /opt/var/log/resolvip.txt
+		sed -i 's/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-c \/opt\/etc\/shadowsocks_5.json"/g' $CHECK/init.d/S22shadowsocks
 	elif [ $ShadowSocks = "6" ];
 	then
 		echo -e "$BOLD Set ShadowSocks_6..." $NORM
 		echo 'ARGS="-c \/opt\/etc\/shadowsocks_6.json"' > /opt/var/log/shadowsocks.log
-		sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks_6.json  > /opt/var/log/resolvip.txt
-		sed -i 's/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-c \/opt\/etc\/shadowsocks_6.json"/g' /opt/etc/init.d/S22shadowsocks
+		sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks_6.json  > /opt/var/log/resolvip.txt
+		sed -i 's/ARGS="-c \/opt\/etc\/shadowsocks.json"/ARGS="-c \/opt\/etc\/shadowsocks_6.json"/g' $CHECK/init.d/S22shadowsocks
 	fi
 
 	sed -i '/^[ \t]\+iptables -t nat -A SS_SPEC_WAN_AC -d $SS -j RETURN/s/^/#/' $PREFIX/shadowsocks/shadowsocks
@@ -1805,10 +1805,10 @@ Your Choice(Direct enter 0 is Restore Default):"
     		esac
 	}
 
-	echo -e $INFO Choose $BOLD one or two $NORM? "\033[4m yes \033[0m"  or "\033[4m no \033[0m"
-	if [ "yes" == $(ask_yes_or_no "one?(Plan one)") ]; then 
+	echo -e $INFO Choose $BOLD CHNROUTES or GFWLIST $NORM? "\033[4m yes \033[0m"  or "\033[4m no \033[0m"
+	if [ "yes" == $(ask_yes_or_no "CHNROUTES?") ]; then 
 		if [ "yes" == $(ask_yes_or_no "ss-redir?") ]; then
-			echo -e $INFO Is updating the plan 1 script......				
+			echo -e $INFO Is updating the script......				
 			if [ -f "/var/log/pcap_dnsproxy.lock" ]; then
 				sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S27pcap-dnsproxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks 
 			else
@@ -1817,12 +1817,12 @@ Your Choice(Direct enter 0 is Restore Default):"
 				[ -f "/var/log/dnscrypt-proxy.lock" ] && sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S29dnscrypt-proxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 			fi
 		else
-			echo -e $INFO Is updating the program 1 script......
+			echo -e $INFO Is updating the script......
 			sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S23ss-tunnel (start|restart))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 			sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 		fi
 	else
-		echo -e $INFO Is updating the plan 2 script......
+		echo -e $INFO Is updating the script......
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S26pdnsd (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 	fi
 	
@@ -1833,10 +1833,10 @@ Your Choice(Direct enter 0 is Restore Default):"
 
 "rebuild_scr" )
 	touch /var/log/rebuild.lock
-	echo -e $INFO Choose $BOLD one or two $NORM? "\033[4m yes \033[0m"  or "\033[4m no \033[0m"
-	if [ "yes" == $(ask_yes_or_no "one?(Plan one)") ]; then 
+	echo -e $INFO Choose $BOLD CHNROUTES or GFWLIST $NORM? "\033[4m yes \033[0m"  or "\033[4m no \033[0m"
+	if [ "yes" == $(ask_yes_or_no "CHNROUTES?") ]; then 
 		if [ "yes" == $(ask_yes_or_no "ss-redir?") ]; then
-			echo -e $INFO Is rebuilding the plan 1 script......
+			echo -e $INFO Is rebuilding the script......
 			if [ -f "/var/log/pcap_dnsproxy.lock" ]; then
 				rm -f $PREFIX/shadowsocks/ignore.list && rm -f $PREFIX/opt/var/log/* &> /dev/null
 				rm -f $CHECK/ch*
@@ -1884,7 +1884,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 				rm -f /var/log/dnscrypt-proxy.lock
 			fi
 		else
-			echo -e $INFO Is rebuilding the plan 1 script......
+			echo -e $INFO Is rebuilding the plan script......
 			rm -f $PREFIX/shadowsocks/ignore.list && rm -f $CHECK/init.d/S24chinadns && rm -f $PREFIX/opt/var/log/* &> /dev/null
 			rm -f $CHECK/init.d/S23ss-tunnel
 			rm -f $CHECK/ch*
@@ -1908,7 +1908,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 			rm -f /var/log/ss-tunnel.lock		
 		fi
 	else
-		echo -e $INFO Is rebuilding the plan 2 script......
+		echo -e $INFO Is rebuilding the plan script......
 		$PREFIX/shadowsocks/shadowsocks flush
 		rm -f $PREFIX/opt/var/log/* &> /dev/null
 		rm -rf $PREFIX/shadowsocks/dnsmasq.d
