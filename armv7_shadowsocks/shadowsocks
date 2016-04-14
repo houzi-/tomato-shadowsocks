@@ -1811,6 +1811,10 @@ Your Choice(Direct enter 0 is Restore Default):"
     		esac
 	}
 
+	if [ ! "$SCRIPT_DIR" == "$PREFIX" ]; then
+		sed -i 's;PREFIX='"$PREFIX"';PREFIX='"$SCRIPT_DIR"';' $SCRIPT_DIR/shadowsocks
+	fi	
+	
 	echo -e $INFO Choose $BOLD CHNROUTES or GFWLIST $NORM? "\033[4m yes \033[0m"  or "\033[4m no \033[0m"
 	if [ "yes" == $(ask_yes_or_no "CHNROUTES?") ]; then 
 		if [ "yes" == $(ask_yes_or_no "ss-redir?") ]; then
