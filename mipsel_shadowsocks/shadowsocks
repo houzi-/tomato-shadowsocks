@@ -91,13 +91,13 @@ case ${1} in
 			cp $SCRIPT_DIR/shadowsocks $PREFIX/shadowsocks
 			mount -o bind $PREFIX/opt /opt
 			cd /opt && wget -O - http://pkg.entware.net/binaries/mipsel/installer/installer.sh | sh
-			tar --numeric-owner -czf /tmp/opt_backup_old.tar.gz -C $PREFIX opt			
+			tar -czf /tmp/opt_backup_old.tar.gz -C $PREFIX opt			
 			if [ -e $SCRIPT_DIR/china* -a -e $SCRIPT_DIR/cron* -a -e $SCRIPT_DIR/dif* -a -e $SCRIPT_DIR/pcap_dns* -a -e $SCRIPT_DIR/pdns* -a -e $SCRIPT_DIR/resol* -a -e $SCRIPT_DIR/shadowsocks-libe* -a -e $SCRIPT_DIR/dnscryp* -a -e $SCRIPT_DIR/zone* -a -e $SCRIPT_DIR/dnsma* -a -e $SCRIPT_DIR/cur* ]; then			
 				cd $SCRIPT_DIR && opkg install --force-checksum china* pdnsd* pcap* reso* shadow* diff* dnscr* cur* dnsma* cron* zone*				
 				echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
 				sleep 5
 				ln -s $PREFIX/shadowsocks/shadowsocks /opt/bin
-				tar --numeric-owner -czf /tmp/opt_backup_new.tar.gz -C $PREFIX opt
+				tar -czf /tmp/opt_backup_new.tar.gz -C $PREFIX opt
 				mkdir -p $PREFIX/shadowsocks/opt_backup
 				cp /tmp/opt_backup_new.tar.gz $PREFIX/shadowsocks/backup && cp /tmp/opt_backup_old.tar.gz $PREFIX/shadowsocks/backup				
 			else
@@ -416,9 +416,8 @@ uptest= none;
 #		sleep 1	
 #		sed -r 's/#(['$'\t'' ]*PLAN=chinadns)/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks		
 
-		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
-		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
-		sed -i "s/^ARGS=\(.*\)114.114.114.114\(.*\)$/ARGS=\1$DNS\2/" $CHECK/init.d/S24chinadns
+		CHINADNS=`nvram get wan_get_dns | sed 's/ /,/'`
+		sed -i "s/^ARGS=\(.*\)114.114.114.114\(.*\)$/ARGS=\1$CHINADNS\2/" $CHECK/init.d/S24chinadns
 	
 		rm -f $CHECK/init.d/S24cn
 		chmod +x $CHECK/init.d/S2*
@@ -522,9 +521,8 @@ uptest= none;
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start|restart))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 #		sed -i 's/^#\([ \t]\+iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5353\)/\1/' $PREFIX/shadowsocks/shadowsocks
 
-		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
-		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
-		sed -i "s/^ARGS=\(.*\)114.114.114.114\(.*\)$/ARGS=\1$DNS\2/" $CHECK/init.d/S24chinadns
+		CHINADNS=`nvram get wan_get_dns | sed 's/ /,/'`
+		sed -i "s/^ARGS=\(.*\)114.114.114.114\(.*\)$/ARGS=\1$CHINADNS\2/" $CHECK/init.d/S24chinadns
 
 		rm -f $CHECK/init.d/S24cn
 		chmod +x $CHECK/init.d/S2*
@@ -626,7 +624,10 @@ uptest= none;
 		echo "dhcp-authoritative" >> $dnsmasq
 		echo >> $dnsmasq
 		sed -i '1d' $dnsmasq		
-			
+
+		local_dns=`cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' | sed -n '1p'`
+		sed -i "s/ 114.114.115.115:53/ $local_dns:53/" $CHECK/pcap-dnsproxy/Config.conf
+		
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
 		touch /var/log/pcap_dnsproxy.lock
@@ -684,9 +685,8 @@ uptest= none;
 #		sleep 1
 #		sed -r 's/#(['$'\t'' ]*PLAN=chinadns)/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks 	
 
-		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
-		DNS=`sed -n '1p' $PREFIX/shadowsocks/dns.list`
-		sed -i "s/^ARGS=\(.*\)114.114.114.114\(.*\)$/ARGS=\1$DNS\2/" $CHECK/init.d/S24chinadns
+		CHINADNS=`nvram get wan_get_dns | sed 's/ /,/'`
+		sed -i "s/^ARGS=\(.*\)114.114.114.114\(.*\)$/ARGS=\1$CHINADNS\2/" $CHECK/init.d/S24chinadns
 	
 		rm -f $CHECK/init.d/S24cn
 		chmod +x $CHECK/init.d/S2*
@@ -2009,7 +2009,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.4.12 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.4.14 $ansi_std"
 	echo -e "$ansi_green # Version: V5.0-7 (MIPS version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
