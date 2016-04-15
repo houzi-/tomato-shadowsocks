@@ -629,7 +629,7 @@ uptest= none;
 		echo -e "$BOLD Set programs_4..." $NORM
 		sed -e "s/shadowsocks.json\"/shadowsocks.json\"/" -e "s/PROCS=ss-local/PROCS=ss-redir/" -i  $CHECK/init.d/S22shadowsocks
 
-		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S27pcap-dnsproxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
+		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S27pcap_dnsproxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
 		sed -i 's/^#\([ \t]\+iptables -t nat -I PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 5353\)/\1/' $PREFIX/shadowsocks/shadowsocks
 #		sed -i 's/^#\([ \t]\+iptables -t nat -A PREROUTING -p tcp --dport 53 -j DNAT --to-destination $lan_ipaddr:53\)/\1/' $PREFIX/shadowsocks/shadowsocks
 #		sleep 1
@@ -1225,7 +1225,7 @@ uptest= none;
 	if [ -f "/var/log/dnscrypt-proxy.lock" ]; then
 		if [ -z "$dnscrypt" ]; then
 			echo '['$DATE'] dnscrypt-proxy abnormal operation, restarting dnscrypt-proxy.' >> /var/log/dnscrypt-proxy_watchdog.log 2>&1
-#			/opt/etc/init.d/S29dnscrypt_proxy start
+#			/opt/etc/init.d/S29dnscrypt-proxy start
 		else
 			echo '['$DATE'] No problem, the normal operation of dnscrypt-proxy.' >> /var/log/dnscrypt-proxy_watchdog.log 2>&1
 		fi
@@ -1436,16 +1436,8 @@ uptest= none;
 		fi
 	fi
 
-	echo -e $INFO Please select $BOLD GFWLIST $NORM switch or switch $BOLD CHNROUTES $NORM? "\033[4m yes \033[0m"  or "\033[4m no \033[0m"
-	if [ "yes" == $(ask_yes_or_no "Select GFWLIST?") ]; then
-		echo -e $INFO Switch CHNROUTES...		
-		$PREFIX/shadowsocks/shadowsocks run
-		service dnsmasq restart
-	else
-		echo -e $INFO Switch GFWLIST...
-		$PREFIX/shadowsocks/shadowsocks run
-		service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
-	fi
+	$PREFIX/shadowsocks/shadowsocks run
+	service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 	;;
 
 "mult_switch" )
@@ -1991,8 +1983,8 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.4.14 $ansi_std"
-	echo -e "$ansi_green # Version: V5.0-7 (ARM final version) $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.4.15 $ansi_std"
+	echo -e "$ansi_green # Version: V5.0-8 (ARM final version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
