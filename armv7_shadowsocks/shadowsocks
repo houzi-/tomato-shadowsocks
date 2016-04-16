@@ -111,7 +111,7 @@ case ${1} in
 				ln -sf /usr/sbin/xtables-multi /opt/bin/iptables-xml
 				tar -czf /tmp/opt_backup_new.tar.gz -C $PREFIX opt
 				mkdir -p $PREFIX/shadowsocks/opt_backup
-				cp /tmp/opt_backup_new.tar.gz $PREFIX/shadowsocks/backup && cp /tmp/opt_backup_old.tar.gz $PREFIX/shadowsocks/backup
+				cp /tmp/opt_backup_new.tar.gz $PREFIX/shadowsocks/opt_backup/ && cp /tmp/opt_backup_old.tar.gz $PREFIX/shadowsocks/opt_backup/
 			else
 				echo -e "$ansi_red You do not import the entire IPK! $ansi_std"
 				exit 0
