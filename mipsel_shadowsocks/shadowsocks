@@ -262,7 +262,7 @@ case ${1} in
 	echo "============================================"
 
 	resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
-	if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ]; then
+	if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ] &> /dev/null; then
 		echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks set_up"$NORM
 		exit 0					
 	fi		
@@ -1237,6 +1237,7 @@ uptest= none;
 
 	OLD_WAN_IP=`cat /var/log/wan_ipaddr.log`
 	if [ ! $OLD_WAN_IP == `nvram get wan_ppp_get_ip` ]; then
+		iptables -t nat -D SS_SPEC_WAN_AC -d `nvram get wan_ppp_get_ip` -j RETURN
 		iptables -t nat -I SS_SPEC_WAN_AC 2 -d `nvram get wan_ppp_get_ip` -j RETURN
 	fi	
 	
@@ -1353,7 +1354,7 @@ uptest= none;
 		echo "============================================"
 
 		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
-		if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ]; then
+		if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ] &> /dev/null; then
 			echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks ss_switch"$NORM				
 			exit 0					
 		fi		
@@ -1402,7 +1403,7 @@ uptest= none;
 		echo "============================================"
 
 		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
-		if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ]; then
+		if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ] &> /dev/null; then
 			echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks mult_switch"$NORM				
 			exit 0					
 		fi		
@@ -1470,7 +1471,7 @@ Your config:"
 				echo "============================================"
 				
 				resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
-				if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ]; then
+				if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ] &> /dev/null; then
 					echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks mult_switch"$NORM				
 					exit 0					
 				fi				
@@ -1827,6 +1828,14 @@ Your Choice(Direct enter 0 is Restore Default):"
     		esac
 	}
 
+	/opt/etc/init.d/S10cron stop
+	
+	SCRIPT_INSTALL=$(cd ${SCRIPT_DIR} && cd .. && pwd)	
+	
+	if [ ! "$SCRIPT_DIR" == "$PREFIX" ]; then
+		sed -i 's;PREFIX='"$PREFIX"';PREFIX='"$SCRIPT_INSTALL"';' $SCRIPT_DIR/shadowsocks
+	fi	
+	
 	if [ ! "$SCRIPT_DIR" == "$PREFIX" ]; then
 		sed -i 's;PREFIX='"$PREFIX"';PREFIX='"$SCRIPT_DIR"';' $SCRIPT_DIR/shadowsocks
 	fi	
@@ -1836,22 +1845,24 @@ Your Choice(Direct enter 0 is Restore Default):"
 		if [ "yes" == $(ask_yes_or_no "ss-redir?") ]; then
 			echo -e $INFO Is updating script......				
 			if [ -f "/var/log/pcap_dnsproxy.lock" ]; then
-				sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S27pcap-dnsproxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
+				sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S27pcap-dnsproxy (start))/\1/' $SCRIPT_INSTALL/shadowsocks/shadowsocks -i $SCRIPT_INSTALL/shadowsocks/shadowsocks
 			else
-				sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
-				[ -f "/var/log/pdnsd.lock" ] && sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S26pdnsd (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
-				[ -f "/var/log/dnscrypt-proxy.lock" ] && sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S29dnscrypt-proxy (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
+				sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start))/\1/' $SCRIPT_INSTALL/shadowsocks/shadowsocks -i $SCRIPT_INSTALL/shadowsocks/shadowsocks
+				[ -f "/var/log/pdnsd.lock" ] && sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S26pdnsd (start))/\1/' $SCRIPT_INSTALL/shadowsocks/shadowsocks -i $SCRIPT_INSTALL/shadowsocks/shadowsocks
+				[ -f "/var/log/dnscrypt-proxy.lock" ] && sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S29dnscrypt-proxy (start))/\1/' $SCRIPT_INSTALL/shadowsocks/shadowsocks -i $SCRIPT_INSTALL/shadowsocks/shadowsocks
 			fi
 		else
 			echo -e $INFO Is updating script......
-			sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S23ss-tunnel (start|restart))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
-			sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
+			sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S23ss-tunnel (start|restart))/\1/' $SCRIPT_INSTALL/shadowsocks/shadowsocks -i $SCRIPT_INSTALL/shadowsocks/shadowsocks
+			sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S24chinadns (start))/\1/' $SCRIPT_INSTALL/shadowsocks/shadowsocks -i $SCRIPT_INSTALL/shadowsocks/shadowsocks
 		fi
 	else
 		echo -e $INFO Is updating script......
-		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S26pdnsd (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
+		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S26pdnsd (start))/\1/' $SCRIPT_INSTALL/shadowsocks/shadowsocks -i $SCRIPT_INSTALL/shadowsocks/shadowsocks
 	fi
-		
+
+	/opt/etc/init.d/S10cron start
+	
 	echo -e -n $update_scr
 	sleep 1 
 	echo -e "$ansi_green PASS. $ansi_std"		
@@ -2019,7 +2030,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.4.15 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.4.17 $ansi_std"
 	echo -e "$ansi_green # Version: V5.0-8 (MIPS version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
