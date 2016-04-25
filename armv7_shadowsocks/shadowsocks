@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2015-2016 Tomato shibby-shadowsocks  
+# Copyright (C) 2015-2016 Tomato-shibby
 # Copyright (C) 2015-2016 Jason Lin <wojiaolinmu008@gmail.com>
 # --------------------------------------------------------------------------------------------------------
 # This is free software, licensed under the GNU General Public License v3.
@@ -1674,7 +1674,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 				sleep 1
 				$PREFIX/shadowsocks/shadowsocks rules
 				sed -e "s/^/-A ss_spec_lan_ac &/g" -e "1 i\-N ss_spec_lan_ac hash:net " $safelist | ipset -R -!		
-     				exit 0
+				exit 0
    			fi
    			let i++
 		done
@@ -1704,7 +1704,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 				sleep 1
 				$PREFIX/shadowsocks/shadowsocks rules
 				sed -e "s/^/-A ss_spec_lan_ac &/g" -e "1 i\-N ss_spec_lan_ac hash:net " $safelist | ipset -R -!				
-     				exit 0
+				exit 0
    			fi
    			let i++
 		done
@@ -1992,7 +1992,7 @@ Your Choice(Direct enter 0 is Restore Default):"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
 	echo -e "$ansi_green # Last edited: 2016.4.17 $ansi_std"
 	echo -e "$ansi_green # Version: V5.0-8 (ARM final version) $ansi_std"
-	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
+	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518] $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
 	echo -e "$ansi_green # configuration script in Tomato under$ansi_std. "
