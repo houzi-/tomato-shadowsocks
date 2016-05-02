@@ -3,9 +3,12 @@ Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com>
  
 Last edited: 2016.4.15
 
-Version: V5.0-8 (final version)
+Version: V1.0-1 (final version)
 
-Explain: This script can be used only for shibby Tomato firmware.
+Explain:
+ 
+1.This script can be used only for shibby Tomato firmware.
+2.This is a new branch of the latest test script.
 
 Thanks: [@aa65535 @wojiaolinmu008 @tomato_shibby @asus_merlin @bwq518]
 
