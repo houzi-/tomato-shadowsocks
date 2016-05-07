@@ -55,7 +55,6 @@ START_SCRIPT="$ansi_white START_SCRIPT: "
 ShadowSocks_Account="$ansi_white ShadowSocks_Account: "
 DNSMASQ="$ansi_white DNSMASQ: "
 ZONEINFO_ASIA="$ansi_white ZONEINFO_ASIA: "
-mult_switch="$ansi_white mult_switch: "
 ss_switch="$ansi_white ss_switch: "
 update_scr="$ansi_white update_scr: "
 rebuild_scr="$ansi_white rebuild_scr: "
@@ -315,7 +314,7 @@ case ${1} in
 		echo -e $INFO Re-setting...
   		echo -e $INFO Exiting...
 		rm -f $CHECK/shadowsocks.json
-  		exit 0 
+  		kill `ps | grep "shadowsocks" | grep -v "grep" | awk '{print $1}'`
 	fi		
 
 echo -e $INFO "Please select Please choose the following programs:\n\
@@ -332,6 +331,7 @@ Your Choice:"
 		sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json  > $PREFIX/opt/var/log/server.txt
 
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S26pdnsd (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
+		sed -i 's/PROCS=ss-watchdog/PROCS=ss-rules/;s/^ARGS=""/ARGS="-G"/' $CHECK/init.d/S99ss-rules		
 
 		echo -e $INFO Configuring dnsmasq_custom...
 		echo > $dnsmasq
@@ -846,20 +846,8 @@ uptest= none;
 	;;
 
 "rules" )
-	if [ -f "$CHECK/ignore.list" ]; then
-		nvram get wan_ipaddr > /var/log/wan_ipaddr.log
-		sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json  > $PREFIX/opt/var/log/server.txt
-		/opt/etc/init.d/S99ss-rules start
-	else
-		iptables-save | grep -v "gfw_black_list" | iptables-restore 2>/dev/null
-		ipset -X gfw_black_list 2>/dev/null	
-		ipset -N gfw_black_list hash:ip
-		$IPT -A PREROUTING -p tcp -m set --match-set $GFWLIST dst \
-			-j REDIRECT --to-port `sed -n 's/.*l_port":\(.*\)/\1/p' /opt/etc/shadowsocks.json | sed 's/,//g'`
-		$IPT -A OUTPUT -p tcp -m set --match-set $$GFWLIST dst \ 
-			-j REDIRECT --to-port `sed -n 's/.*l_port":\(.*\)/\1/p' /opt/etc/shadowsocks.json | sed 's/,//g'`
-	fi
-
+	sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json  > $PREFIX/opt/var/log/server.txt
+	/opt/etc/init.d/S99ss-rules start
 	sleep 5
 
 	if [ "$adm_filter" == "1" ]; then
@@ -952,19 +940,7 @@ uptest= none;
          
 "flush" )
 	echo -e -n "$ansi_white Flushing rules... "
-
-	if [ -f "$CHECK/ignore.list" ]; then
-		/opt/bin/ss-rules -f
-	else
-		$IPT -D PREROUTING -p tcp -m set --match-set $GFWLIST dst \
-			-j REDIRECT --to-port `cat /opt/etc/shadowsocks.json | awk -v RS=',' -F: '/"local_port"/ {print $2}'` \
-			2>/dev/null && \
-		$IPT -D OUTPUT -p tcp -m set --match-set $GFWLIST dst \
-			-j REDIRECT --to-port `cat /opt/etc/shadowsocks.json | awk -v RS=',' -F: '/"local_port"/ {print $2}'` \
-			2>/dev/null && \
-		ipset -X gfw_black_list 2>/dev/null
-	fi
- 			
+	/opt/bin/ss-rules -f		
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"
 	;;
@@ -1639,7 +1615,7 @@ uptest= none;
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.5.3 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.5.7 $ansi_std"
 	echo -e "$ansi_green # Version: V6.0-1 (ARM beta version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"

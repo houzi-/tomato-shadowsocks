@@ -56,7 +56,8 @@ flush_r() {
 	ipset -X ss_spec_lan_ac 2>/dev/null
 	ipset -X ss_spec_wan_ac 2>/dev/null
 	ipset -X adm_lan_ac 2>/dev/null
-	ipset -X adm_wan_ac 2>/dev/null	
+	ipset -X adm_wan_ac 2>/dev/null
+	ipset -X gfw_black_list 2>/dev/null
 	our_rule
 	if [ "$GFWLIST" = 1 ]; then
 		ipset -N gfw_black_list hash:ip
