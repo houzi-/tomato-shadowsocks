@@ -1,6 +1,6 @@
 #!/opt/bin/bash
 #
-# Copyright (C) 2016 DD-WRT
+# Copyright (C) 2016 Tomato
 # Copyright (C) 2016 Jian Chang <aa65535@live.com> && Jason Lin <wojiaolinmu008@gmail.com>
 # Main author: Jian Chang && Jason Lin
 # This is free software, licensed under the GNU General Public License v3.
@@ -34,6 +34,7 @@ usage() {
 		    -u                      enable udprelay mode, TPROXY is required
 		    -U                      enable udprelay mode, using different IP
 		                            and ports for TCP and UDP
+		    -G                      enable GFWLIST
 		    -f                      flush the rules
 		    -h                      show this help message and exit
 EOF
@@ -47,7 +48,8 @@ loger() {
 
 flush_r() {
 	iptables-save -c | grep -v "$TAG" | \
-	grep -v "$ADM" | iptables-restore -c 2>/dev/null
+	grep -v "$ADM" | grep -v "gfw_black_list" | \
+	iptables-restore -c 2>/dev/null
 	$IPT -F
 	ip rule del fwmark 0x01/0x01 table 100 2>/dev/null
 	ip route del local 0.0.0.0/0 dev lo table 100 2>/dev/null
@@ -55,7 +57,14 @@ flush_r() {
 	ipset -X ss_spec_wan_ac 2>/dev/null
 	ipset -X adm_lan_ac 2>/dev/null
 	ipset -X adm_wan_ac 2>/dev/null	
-	our_rule	
+	our_rule
+	if [ "$GFWLIST" = 1 ]; then
+		ipset -N gfw_black_list hash:ip
+		$IPT -A PREROUTING -p tcp -m set --match-set gfw_black_list dst \
+			-j REDIRECT --to-port `sed -n 's/.*l_port":\(.*\)/\1/p' /opt/etc/shadowsocks.json | sed 's/,//g'`
+		$IPT -A OUTPUT -p tcp -m set --match-set gfw_black_list dst \
+			-j REDIRECT --to-port `sed -n 's/.*l_port":\(.*\)/\1/p' /opt/etc/shadowsocks.json | sed 's/,//g'`
+	fi	
 	return 0
 }
 
@@ -165,7 +174,7 @@ gen_iplist() {
 EOF
 }
 
-while getopts ":s:l:S:L:i:e:a:b:w:ouUfh" arg; do
+while getopts ":s:l:S:L:i:e:a:b:w:ouUGfh" arg; do
 	case "$arg" in
 		s)
 			server=$OPTARG
@@ -203,6 +212,9 @@ while getopts ":s:l:S:L:i:e:a:b:w:ouUfh" arg; do
 		U)
 			TPROXY=2
 			;;
+		G)
+			GFWLIST=1
+			;;			
 		f)
 			flush_r
 			exit 0
@@ -213,8 +225,12 @@ while getopts ":s:l:S:L:i:e:a:b:w:ouUfh" arg; do
 	esac
 done
 
-if [ -z "$server" -o -z "$local_port" ]; then
-	usage 2
+if [ "$GFWLIST" = 1 ]; then
+	:	
+else
+	if [ -z "$server" -o -z "$local_port" ]; then
+		usage 2
+	fi
 fi
 
 if [ "$TPROXY" = 1 ]; then
@@ -225,6 +241,12 @@ elif [ "$TPROXY" = 2 ]; then
 	: ${LOCAL_PORT:?"You must assign a port for the udp relay server."}
 fi
 
-flush_r && fw_rule && ipset_r && ac_rule && tp_rule
-[ "$?" = 0 ] || logger 3 "Start failed!"
-exit $?
+if [ -f "$IGNORE_LIST" ]; then
+	flush_r && fw_rule && ipset_r && ac_rule && tp_rule
+	[ "$?" = 0 ] && loger 6 "Load chnroutes successful" || loger 3 "Start failed!"
+	exit $?
+else
+	flush_r
+	[ "$?" = 0 ] && loger 6 "Load gfwlist successful" || loger 3 "Start failed!"
+	exit $?
+fi
