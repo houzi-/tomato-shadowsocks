@@ -1,0 +1,256 @@
+#!/opt/bin/bash
+#
+# Copyright (C) 2016 Tomato
+# Copyright (C) 2016 Jian Chang <aa65535@live.com> && Jason Lin <wojiaolinmu008@gmail.com>
+# Main author: Jian Chang && Jason Lin
+# This is free software, licensed under the GNU General Public License v3.
+# See /LICENSE for more information.
+#
+
+#debug
+#set -x
+
+TAG="SS_SPEC"          # iptables tag
+IPT="iptables -t nat"  # alias of iptables
+ADBYBY="ADBYBY_"             # iptables ADBYBY tag
+
+usage() {
+	cat <<-EOF
+		Usage: ss-rules [options]
+
+		Valid options are:
+
+		    -s <server_ip>          ip address of shadowsocks remote server
+		    -l <local_port>         port number of shadowsocks local server
+		    -S <server_ip>          ip address of shadowsocks remote UDP server
+		    -L <local_port>         port number of shadowsocks local UDP server
+		    -i <ip_list_file>       a file content is bypassed ip list
+		    -a <lan_ips>            lan ip of access control, need a prefix to
+		                            define access control mode
+		    -b <wan_ips>            wan ip of will be bypassed
+		    -w <wan_ips>            wan ip of will be forwarded
+		    -e <extra_options>      extra options for iptables
+		    -o                      apply the rules to the OUTPUT chain
+		    -u                      enable udprelay mode, TPROXY is required
+		    -U                      enable udprelay mode, using different IP
+		                            and ports for TCP and UDP
+		    -G                      enable GFWLIST
+		    -f                      flush the rules
+		    -h                      show this help message and exit
+EOF
+	exit $1
+}
+
+loger() {
+	# 1.alert 2.crit 3.err 4.warn 5.notice 6.info 7.debug
+	logger -st ss-rules[$$] -p$1 $2
+}
+
+flush_r() {
+	iptables-save -c | grep -v "$TAG" | \
+	grep -v "$ADBYBY" | grep -v "gfw_black_list" | \
+	iptables-restore -c 2>/dev/null
+	$IPT -F
+	ip rule del fwmark 0x01/0x01 table 100 2>/dev/null
+	ip route del local 0.0.0.0/0 dev lo table 100 2>/dev/null
+	ipset -X ss_spec_lan_ac 2>/dev/null
+	ipset -X ss_spec_wan_ac 2>/dev/null
+	ipset -X adbyby_lan_ac 2>/dev/null
+	ipset -X adbyby_wan_ac 2>/dev/null
+	ipset -X gfw_black_list 2>/dev/null
+	our_rule
+	if [ "$GFWLIST" = 1 ]; then
+		ipset -N gfw_black_list iphash
+		$IPT -A PREROUTING -p tcp -m set --set gfw_black_list dst \
+			-j REDIRECT --to-port `sed -n 's/.*l_port":\(.*\)/\1/p' /opt/etc/shadowsocks.json | sed 's/,//g'`
+		$IPT -A OUTPUT -p tcp -m set --set gfw_black_list dst \
+			-j REDIRECT --to-port `sed -n 's/.*l_port":\(.*\)/\1/p' /opt/etc/shadowsocks.json | sed 's/,//g'`
+	fi	
+	return 0
+}
+
+our_rule() {
+	$IPT -A PREROUTING -d `nvram get wan_ppp_get_ip` \
+		-j WANPREROUTING && \
+	$IPT -A PREROUTING -d `nvram get lan_ipaddr | sed -e 's;1$;0/255.255.255.0;'` \
+		-i `nvram get wan_iface` -j DROP && \
+	$IPT -A POSTROUTING -o `nvram get wan_iface` \
+		-j MASQUERADE && \
+	$IPT -A POSTROUTING -s `nvram get lan_ipaddr | sed -e 's;1$;0/255.255.255.0;'` \
+		-d `nvram get lan_ipaddr | sed -e 's;1$;0/255.255.255.0;'` -o `nvram get lan_ifname` \
+		-j SNAT --to-source `nvram get lan_ipaddr` && \
+	$IPT -A WANPREROUTING -p icmp -j DNAT \
+		--to-destination `nvram get lan_ipaddr` 2>/dev/null
+}
+
+ipset_r() {
+	ipset -R <<-EOF || return 1
+		-N ss_spec_wan_ac nethash
+		$(gen_iplist | sed -e "s/^/-A ss_spec_wan_ac /")
+		COMMIT
+EOF
+	$IPT -N SS_SPEC_WAN_AC && \
+	$IPT -A SS_SPEC_WAN_AC -m set --set ss_spec_wan_ac dst -j RETURN && \
+	$IPT -A SS_SPEC_WAN_AC -j SS_SPEC_WAN_FW
+	return $?
+}
+
+fw_rule() {
+	$IPT -N SS_SPEC_WAN_FW && \
+	$IPT -A SS_SPEC_WAN_FW -p tcp \
+		-j REDIRECT --to-ports $local_port 2>/dev/null || {
+		loger 3 "Can't redirect, please check the iptables."
+		exit 1
+	}
+	return $?
+}
+
+ac_rule() {
+	if [ -n "$LAN_AC_IP" ]; then
+		case "${LAN_AC_IP:0:1}" in
+			w|W)
+				MATCH_SET="-m set --set ss_spec_lan_ac src"
+				;;
+			b|B)
+				MATCH_SET="-m set ! --set ss_spec_lan_ac src"
+				;;
+			*)
+				loger 3 "Illegal argument \`-a $LAN_AC_IP\`."
+				return 2
+				;;
+		esac
+	fi
+	IFNAME=$(nvram get lan_ifname 2>/dev/null)
+	ipset -R <<-EOF || return 1
+		-N ss_spec_lan_ac iphash
+		$(for ip in ${LAN_AC_IP:1}; do echo "-A ss_spec_lan_ac $ip"; done)
+		COMMIT
+EOF
+	$IPT -I PREROUTING 1 ${IFNAME:+-i $IFNAME} -p tcp $EXT_ARGS $MATCH_SET \
+		-j SS_SPEC_WAN_AC
+	if [ "$OUTPUT" = 1 ]; then
+		$IPT -I OUTPUT 1 -p tcp $EXT_ARGS -j SS_SPEC_WAN_AC
+	fi
+	return $?
+}
+
+tp_rule() {
+	lsmod | grep -q TPROXY || return 0
+	[ -n "$TPROXY" ] || return 0
+	ip rule add fwmark 0x01/0x01 table 100
+	ip route add local 0.0.0.0/0 dev lo table 100
+	local ipt="iptables -t mangle"
+	$ipt -N SS_SPEC_TPROXY
+	$ipt -A SS_SPEC_TPROXY -p udp -m set ! --set ss_spec_wan_ac dst \
+		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
+	$ipt -I PREROUTING 1 ${IFNAME:+-i $IFNAME} -p udp $EXT_ARGS $MATCH_SET \
+		-j SS_SPEC_TPROXY
+	return $?
+}
+
+get_wan_ip() {
+	cat <<-EOF | grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}"
+		$server
+		$SERVER
+		$WAN_BP_IP
+EOF
+}
+
+gen_iplist() {
+	cat <<-EOF
+		0.0.0.0/8
+		10.0.0.0/8
+		100.64.0.0/10
+		127.0.0.0/8
+		169.254.0.0/16
+		172.16.0.0/12
+		192.0.0.0/24
+		192.0.2.0/24
+		192.88.99.0/24
+		192.168.0.0/16
+		198.18.0.0/15
+		198.51.100.0/24
+		203.0.113.0/24
+		224.0.0.0/4
+		240.0.0.0/4
+		$(get_wan_ip | sed -e "s/$/\/31/")
+		$(cat ${IGNORE_LIST:=/dev/null} 2>/dev/null)
+EOF
+}
+
+while getopts ":s:l:S:L:i:e:a:b:w:ouUGfh" arg; do
+	case "$arg" in
+		s)
+			server=$OPTARG
+			;;			
+		l)
+			local_port=$OPTARG
+			;;
+		S)
+			SERVER=$OPTARG
+			;;
+		L)
+			LOCAL_PORT=$OPTARG
+			;;
+		i)
+			IGNORE_LIST=$OPTARG
+			;;
+		e)
+			EXT_ARGS=$OPTARG
+			;;
+		a)
+			LAN_AC_IP=$OPTARG
+			;;
+		b)
+			WAN_BP_IP=$(for ip in $OPTARG; do echo $ip; done)
+			;;
+		w)
+			WAN_FW_IP=$OPTARG
+			;;
+		o)
+			OUTPUT=1
+			;;
+		u)
+			TPROXY=1
+			;;
+		U)
+			TPROXY=2
+			;;
+		G)
+			GFWLIST=1
+			;;			
+		f)
+			flush_r
+			exit 0
+			;;
+		h)
+			usage 0
+			;;
+	esac
+done
+
+if [ "$GFWLIST" = 1 ]; then
+	:	
+else
+	if [ -z "$server" -o -z "$local_port" ]; then
+		usage 2
+	fi
+fi
+
+if [ "$TPROXY" = 1 ]; then
+	SERVER=$server
+	LOCAL_PORT=$local_port
+elif [ "$TPROXY" = 2 ]; then
+	: ${SERVER:?"You must assign an ip for the udp relay server."}
+	: ${LOCAL_PORT:?"You must assign a port for the udp relay server."}
+fi
+
+if [ -f "$IGNORE_LIST" ]; then
+	flush_r && fw_rule && ipset_r && ac_rule && tp_rule
+	[ "$?" = 0 ] && loger 6 "Load chnroutes successful" || loger 3 "Start failed!"
+	exit $?
+else
+	flush_r
+	[ "$?" = 0 ] && loger 6 "Load gfwlist successful" || loger 3 "Start failed!"
+	exit $?
+fi
