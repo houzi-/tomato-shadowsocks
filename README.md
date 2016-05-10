@@ -1,7 +1,7 @@
 #tomato-shadowsocks script
 Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com>
 
-Last edited: 2016.5.3
+Last edited: 2016.5.10
 
 Version: V6.0-1
 
@@ -19,4 +19,4 @@ See /LICENSE for more information.
 **See my [Tomato-shadowsocks Scripting Guide](http://www.router008.com/2016/02/14/Tomato-shadowsocks-Scripting-Guide/)**
 
 # Installation
-**See my [Tomato-ShadowSocks(armv7+mipsel)](http://www.router008.com/2016/02/03/Tomato-ShadowSocks/)**
+**See my [Tomato-ShadowSocks(armv7+mipsel)](http://www.router008.com/2016/05/09/Tomato-ShadowSocks/)**
