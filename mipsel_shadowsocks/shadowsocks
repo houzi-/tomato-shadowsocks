@@ -409,6 +409,7 @@ uptest= none;
 		sed -i 's/[\t]*//g' $CHECK/cron.5mins/clear_log.sh
 		echo -e "shadowsocks check\nshadowsocks check_rules" > $CHECK/cron.1min/check.sh		
 
+		$PREFIX/shadowsocks/shadowsocks backup		
 		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
@@ -514,9 +515,10 @@ uptest= none;
 		> $CHECK/cron.5mins/clear_log.sh
 		sed -i 's/[\t]*//g' $CHECK/cron.5mins/clear_log.sh
 		echo -e "shadowsocks check\nshadowsocks check_rules" > $CHECK/cron.1min/check.sh	
-
+	
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
+		$PREFIX/shadowsocks/shadowsocks backup		
 		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
@@ -601,6 +603,7 @@ uptest= none;
 		/opt/etc/init.d/S29dnscrypt-proxy start
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
+		$PREFIX/shadowsocks/shadowsocks backup		
 		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null		
@@ -678,6 +681,7 @@ uptest= none;
 
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
+		$PREFIX/shadowsocks/shadowsocks backup		
 		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
@@ -761,6 +765,7 @@ uptest= none;
 			
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
+		$PREFIX/shadowsocks/shadowsocks backup		
 		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
@@ -1373,6 +1378,20 @@ uptest= none;
 	echo -e "$ansi_green PASS. $ansi_std"		
 	;;
 
+"backup" )
+	echo -e "$ansi_white You want to backup entware?(y/N)$ansi_std"
+	read choice	
+	if [ "${choice}" == "y" ]; then
+		tar -czf /tmp/entware_backup.tar.gz -C $PREFIX opt
+		[ ! -d "$PREFIX/shadowsocks/entware_backup" ] && mkdir -p $PREFIX/shadowsocks/entware_backup
+		cp /tmp/entware_backup.tar.gz $PREFIX/shadowsocks/entware_backup/
+	fi
+	
+	echo -e -n $backup
+	sleep 1 
+	echo -e "$ansi_green PASS. $ansi_std"	
+	;;	
+	
 "mail" )
 	curl -s --connect-timeout 1 www.google.com &> /dev/null
 
@@ -1413,7 +1432,8 @@ uptest= none;
 	echo -e "$ansi_white   [wan_ac] LAN access control $ansi_std"
 	echo -e "$ansi_white   [lan_ac] LAN access control $ansi_std"
 	echo -e "$ansi_white   [off_on] Turn off switch $ansi_std"
-	echo -e "$ansi_white   [update_scr] Update script $ansi_std"	
+	echo -e "$ansi_white   [update_scr] Update script $ansi_std"
+	echo -e "$ansi_white   [backup] Backup entware $ansi_std"	
 	echo -e "$ansi_white   [mail] Send shadowsocks running information $ansi_std"
 	echo -e "$ansi_white   [help] Script help $ansi_std"
 	echo -e "$ansi_white ===================================================================== $ansi_std"
