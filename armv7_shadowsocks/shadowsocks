@@ -85,9 +85,6 @@ china_google_list="https://raw.githubusercontent.com/felixonmars/dnsmasq-china-l
 # alias of iptables
 IPT="iptables -t nat"
 
-# iptables tag
-GFWLIST="gfw_black_list"
-
 case ${1} in
 
 -s | --set_up) 
@@ -1372,13 +1369,13 @@ uptest= none;
 
 	if [ ! $(cat $CHECK/cron.1min/check.sh | grep "temp" | grep -v "grep" | wc -l) -ge 1 ]; then
 		sed -i '/^$/d' $CHECK/cron.1min/check.sh
-		echo "shadowsocks temp" >> $CHECK/cron.1min/check.sh
+		echo "shadowsocks -t" >> $CHECK/cron.1min/check.sh
 		mkdir -p $CHECK/sch_script
 		sed -i '/^$/d' $CHECK/crontab
 		sed -i '$i\0 8 * * * root /opt/bin/run-parts /opt/etc/sch_script\' $CHECK/crontab
 		sed -i '/^$/d' $CHECK/crontab		
-		echo "sed -i 's/#\(shadowsocks temp\)/\1/' $CHECK/cron.1min/check.sh" > $CHECK/sch_script/temp_s.sh
-		echo "shadowsocks temp_s" > $CHECK/cron.daily/temp_s.sh
+		echo "sed -i 's/#\(shadowsocks -t\)/\1/' $CHECK/cron.1min/check.sh" > $CHECK/sch_script/temp_s.sh
+		echo "shadowsocks -ts" > $CHECK/cron.daily/temp_s.sh
 	fi
 	
 	T=`cat /proc/dmu/temperature | cut -f 3 -d" " | cut -c 1,2 | grep "^[0-9]\{2\}"`
@@ -1403,7 +1400,7 @@ uptest= none;
 -ts | --temp_s)
 	TC=$(cat $CHECK/cron.1min/check.sh | grep "temp" | grep -v "grep")
 	if [ -n "$TC" ]; then
-		sed -i 's/\(^shadowsocks temp\)/#\1/' $CHECK/cron.1min/check.sh
+		sed -i 's/\(^shadowsocks -t\)/#\1/' $CHECK/cron.1min/check.sh
 	fi
 
 	nvram set fanctrl_dutycycle=1
