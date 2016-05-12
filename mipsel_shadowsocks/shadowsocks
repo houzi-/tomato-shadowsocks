@@ -83,7 +83,7 @@ IPT="iptables -t nat"
 
 case ${1} in
 
-"set_up" )
+-s | --set_up)
 	DECIVE=$(cat /proc/cpuinfo | grep "mips16" | grep -v "grep")
 	if [ -z "$DECIVE" ]; then
 		echo -e -n $PLATFORM
@@ -345,12 +345,12 @@ Your Choice:"
 		service dnsmasq restart
 		
 		echo UTC-8 > $CHECK/TZ		
-		$PREFIX/shadowsocks/shadowsocks run
+		$PREFIX/shadowsocks/shadowsocks -S
 		touch /var/log/ipset.lock
-		$PREFIX/shadowsocks/shadowsocks modules
+		$PREFIX/shadowsocks/shadowsocks -m
 		sleep 1
-		$PREFIX/shadowsocks/shadowsocks rules
-		$PREFIX/shadowsocks/shadowsocks update_gfwlist
+		$PREFIX/shadowsocks/shadowsocks -r
+		$PREFIX/shadowsocks/shadowsocks -ug
 
 		echo -e $INFO Configuring ntp server...
 		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
@@ -407,9 +407,9 @@ uptest= none;
 		\necho \"\" > /var/log/iptables_rules.log" \
 		> $CHECK/cron.5mins/clear_log.sh
 		sed -i 's/[\t]*//g' $CHECK/cron.5mins/clear_log.sh
-		echo -e "shadowsocks check\nshadowsocks check_rules" > $CHECK/cron.1min/check.sh		
+		echo -e "shadowsocks -c\nshadowsocks -cr" > $CHECK/cron.1min/check.sh		
 
-		$PREFIX/shadowsocks/shadowsocks backup		
+		$PREFIX/shadowsocks/shadowsocks -b		
 		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
@@ -476,11 +476,11 @@ uptest= none;
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
 		echo UTC-8 > $CHECK/TZ		
-		$PREFIX/shadowsocks/shadowsocks run
+		$PREFIX/shadowsocks/shadowsocks -S
 		sleep 4
-		$PREFIX/shadowsocks/shadowsocks modules
+		$PREFIX/shadowsocks/shadowsocks -m
 		sleep 2
-		$PREFIX/shadowsocks/shadowsocks rules
+		$PREFIX/shadowsocks/shadowsocks -r
 
 		echo -e $INFO Configuring ntp server...
 		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
@@ -514,11 +514,11 @@ uptest= none;
 		\necho \"\" > /var/log/iptables_rules.log" \
 		> $CHECK/cron.5mins/clear_log.sh
 		sed -i 's/[\t]*//g' $CHECK/cron.5mins/clear_log.sh
-		echo -e "shadowsocks check\nshadowsocks check_rules" > $CHECK/cron.1min/check.sh	
-	
+		echo -e "shadowsocks -c\nshadowsocks -cr" > $CHECK/cron.1min/check.sh	
+
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
-		$PREFIX/shadowsocks/shadowsocks backup		
+		$PREFIX/shadowsocks/shadowsocks -b		
 		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
@@ -560,11 +560,11 @@ uptest= none;
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
 		echo UTC-8 > $CHECK/TZ		
-		$PREFIX/shadowsocks/shadowsocks run
+		$PREFIX/shadowsocks/shadowsocks -S
 		sleep 4
-		$PREFIX/shadowsocks/shadowsocks modules
+		$PREFIX/shadowsocks/shadowsocks -m
 		sleep 2
-		$PREFIX/shadowsocks/shadowsocks rules
+		$PREFIX/shadowsocks/shadowsocks -r
 
 		echo -e $INFO Configuring ntp server...
 		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
@@ -598,12 +598,12 @@ uptest= none;
 		\necho \"\" > /var/log/iptables_rules.log" \
 		> $CHECK/cron.5mins/clear_log.sh
 		sed -i 's/[\t]*//g' $CHECK/cron.5mins/clear_log.sh			
-		echo -e "shadowsocks check\nshadowsocks check_rules" > $CHECK/cron.1min/check.sh
+		echo -e "shadowsocks -c\nshadowsocks -cr" > $CHECK/cron.1min/check.sh
 
 		/opt/etc/init.d/S29dnscrypt-proxy start
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
-		$PREFIX/shadowsocks/shadowsocks backup		
+		$PREFIX/shadowsocks/shadowsocks -b		
 		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null		
@@ -640,11 +640,11 @@ uptest= none;
 		touch $PREFIX/shadowsocks/chnroutes.lock
 		touch /var/log/pcap_dnsproxy.lock
 		echo UTC-8 > $CHECK/TZ	
-		$PREFIX/shadowsocks/shadowsocks run
+		$PREFIX/shadowsocks/shadowsocks -S
 		sleep 4
-		$PREFIX/shadowsocks/shadowsocks modules
+		$PREFIX/shadowsocks/shadowsocks -m
 		sleep 2
-		$PREFIX/shadowsocks/shadowsocks rules
+		$PREFIX/shadowsocks/shadowsocks -r
 			
 		echo -e $INFO Configuring ntp server...
 		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
@@ -677,11 +677,11 @@ uptest= none;
 		\necho \"\" > /var/log/iptables_rules.log" \
 		> $CHECK/cron.5mins/clear_log.sh
 		sed -i 's/[\t]*//g' $CHECK/cron.5mins/clear_log.sh			
-		echo -e "shadowsocks check\nshadowsocks check_rules" > $CHECK/cron.1min/check.sh	
+		echo -e "shadowsocks -c\nshadowsocks -cr" > $CHECK/cron.1min/check.sh	
 
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
-		$PREFIX/shadowsocks/shadowsocks backup		
+		$PREFIX/shadowsocks/shadowsocks -b		
 		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
@@ -724,11 +724,11 @@ uptest= none;
 		touch $PREFIX/shadowsocks/update.lock
 		touch $PREFIX/shadowsocks/chnroutes.lock
 		echo UTC-8 > $CHECK/TZ		
-		$PREFIX/shadowsocks/shadowsocks run
+		$PREFIX/shadowsocks/shadowsocks -S
 		sleep 4
-		$PREFIX/shadowsocks/shadowsocks modules
+		$PREFIX/shadowsocks/shadowsocks -m
 		sleep 2
-		$PREFIX/shadowsocks/shadowsocks rules
+		$PREFIX/shadowsocks/shadowsocks -r
 
 		echo -e $INFO Configuring ntp server...
 		cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' > $PREFIX/shadowsocks/dns.list
@@ -761,18 +761,18 @@ uptest= none;
 		\necho \"\" > /var/log/iptables_rules.log" \
 		> $CHECK/cron.5mins/clear_log.sh
 		sed -i 's/[\t]*//g' $CHECK/cron.5mins/clear_log.sh	
-		echo -e "shadowsocks check\nshadowsocks check_rules" > $CHECK/cron.1min/check.sh
+		echo -e "shadowsocks -c\nshadowsocks -cr" > $CHECK/cron.1min/check.sh
 			
 		rm -f $PREFIX/shadowsocks/update.lock
 		rm -f $PREFIX/shadowsocks/chnroutes.lock
-		$PREFIX/shadowsocks/shadowsocks backup		
+		$PREFIX/shadowsocks/shadowsocks -b		
 		echo -e "$BOLD Set successfully, please reboot the router. $NORM"		
 		echo -e "$ansi_red Set successfully, please reboot the router. Found a Bug? Plea se report at https://github.com/houzi-/tomato-shadowsocks/issues. $ansi_std"
 		killall shadowsocks > /dev/null
 	fi	
 	;;
 
-"modules" )
+-m | --modules)
 	echo -e -n "$ansi_white Loading ipset module... "
 	for module in ipt_REDIRECT ip_set ipt_set ip_set_nethash ip_set_iphash  
 	do
@@ -782,7 +782,7 @@ uptest= none;
 	echo -e "            $ansi_green done. $ansi_std"
 	;;
 
-"run" )
+-S | --START)
 	sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json  > /var/log/server.txt
 
 	if [ -f "$PREFIX/shadowsocks/chnroutes.lock" ]; then
@@ -818,16 +818,16 @@ uptest= none;
 				else
 					/opt/etc/init.d/S22shadowsocks restart
 #					/opt/etc/init.d/S23ss-tunnel restart
-					$PREFIX/shadowsocks/shadowsocks flush
+					$PREFIX/shadowsocks/shadowsocks -f
 					sleep 2
-					$PREFIX/shadowsocks/shadowsocks rules
+					$PREFIX/shadowsocks/shadowsocks -r
 				fi
 			done
 		done
 	fi
 	;;
 
-"rules" )
+-r | --rules)
 	sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json  > $PREFIX/opt/var/log/server.txt
 	/opt/etc/init.d/S99ss-rules start
 	sleep 5
@@ -873,7 +873,7 @@ uptest= none;
 	echo -e "            $ansi_green done. $ansi_std"	
 	;;
 
-"global" )
+-g | --global)
 	yes_or_no() {
 		read -p "$1 ([y]es or [n]o): "
 		case $(echo $REPLY | tr '[A-Z]' '[a-z]') in
@@ -917,18 +917,18 @@ uptest= none;
 		echo -e "            $ansi_green done. $ansi_std"
 	fi
 
-	$PREFIX/shadowsocks/shadowsocks flush	
-	$PREFIX/shadowsocks/shadowsocks rules			
+	$PREFIX/shadowsocks/shadowsocks -f
+	$PREFIX/shadowsocks/shadowsocks -r		
 	;;
          
-"flush" )
+-f | --flush)
 	echo -e -n "$ansi_white Flushing rules... "
 	ss-rules -f	
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"
 	;;
 
-"update" )
+-u | --update)
 	directory=$(cd $PREFIX/shadowsocks && ls | grep "dnsmasq.d" | grep -v "grep")
 	if [ -z "$directory" ]; then
 		cd $PREFIX/shadowsocks && mkdir dnsmasq.d
@@ -1005,15 +1005,15 @@ uptest= none;
 	else
 		if [ -f "/var/log/pcap_dnsproxy.lock" ]; then
 			/opt/etc/init.d/S27pcap-dnsproxy restart
-			$PREFIX/shadowsocks/shadowsocks flush
+			$PREFIX/shadowsocks/shadowsocks -f
 			sleep 1
-			$PREFIX/shadowsocks/shadowsocks rules
+			$PREFIX/shadowsocks/shadowsocks -r
 			service dnsmasq restart	
 		else
 			/opt/etc/init.d/S24chinadns restart
-			$PREFIX/shadowsocks/shadowsocks flush
+			$PREFIX/shadowsocks/shadowsocks -f
 			sleep 1
-			$PREFIX/shadowsocks/shadowsocks rules
+			$PREFIX/shadowsocks/shadowsocks -r
 			service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start	
 		fi
 	fi
@@ -1023,7 +1023,7 @@ uptest= none;
 	echo -e "            $ansi_green done. $ansi_std"	
 	;;
 
-"update_gfwlist" )
+-ug | --update_gfwlist)
 	echo -e -n "$ansi_white Updating gfwlist... "
 	directory=$(cd $PREFIX/shadowsocks && ls | grep "dnsmasq.d" | grep -v "grep")
 	if [ -z "$directory" ]; then
@@ -1041,7 +1041,7 @@ uptest= none;
 	service dnsmasq restart
 	;;
 	
-"check" )
+-c | --check)
 	SHADOWSOCKS=$(ps | grep "ss-redir" | grep -v "grep")
 	if [ -f "/var/log/shadowsocks.lock" ]; then
 		if [ -z "$SHADOWSOCKS" ]; then
@@ -1107,15 +1107,15 @@ uptest= none;
 	fi	
 	;;
 
-"check_rules" )
+-cr | --check_rules)
 	if [ -f "$CHECK/ignore.list" ]; then
 		if [ "`iptables -t nat -nvL | grep "SS_SPEC_WAN_AC" | wc -l`" -eq 3 ]; then
 			logger [check_rules] NO Problem
 			exit 0
 		else
 			logger [check_rules] Loading Rules
-			$PREFIX/shadowsocks/shadowsocks flush
-			$PREFIX/shadowsocks/shadowsocks rules			
+			$PREFIX/shadowsocks/shadowsocks -f
+			$PREFIX/shadowsocks/shadowsocks -r			
 		fi
 	else
 		if [ "`iptables -t nat -nvL | grep "gfw_black_list" | wc -l`" -eq 2 ]; then
@@ -1123,13 +1123,13 @@ uptest= none;
 			exit 0
 		else
 			logger [check_rules] Loading Rules
-			$PREFIX/shadowsocks/shadowsocks flush
-			$PREFIX/shadowsocks/shadowsocks rules
+			$PREFIX/shadowsocks/shadowsocks -f
+			$PREFIX/shadowsocks/shadowsocks -r
 		fi
 	fi
 	;;	
 	
-"ss_switch" )
+-sw | --ss_switch)
 	yes_or_no() {
 		read -p "$1 ([y]es or [n]o): "
 		case $(echo $REPLY | tr '[A-Z]' '[a-z]') in
@@ -1236,11 +1236,11 @@ uptest= none;
 		fi
 	fi
 
-	$PREFIX/shadowsocks/shadowsocks run
+	$PREFIX/shadowsocks/shadowsocks -S
 	service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start	
 	;;
 
-"wan_ac" )
+-wa | --wan_ac)
 	echo -e "$ansi_white Allow list within?(y/N)$ansi_std"
 	read choice
 	if [ "${choice}" == "y" ]; then
@@ -1248,12 +1248,12 @@ uptest= none;
 		sed -i '/\w$LAN_AC_IN/{/#/!s/^/#/}' /opt/bin/ss-watchdog
 		sed -i '/\b$LAN_AC_OUT/{/#/!s/^/#/}' /opt/bin/ss-watchdog
 		sleep 1
-		$PREFIX/shadowsocks/shadowsocks flush
-		$PREFIX/shadowsocks/shadowsocks rules
+		$PREFIX/shadowsocks/shadowsocks -f
+		$PREFIX/shadowsocks/shadowsocks -r
 	fi
 	;;
 
-"lan_ac" )
+-la | --lan_ac)
 	echo -e "-------$BOLD[IP]$NORM-----------$BOLD[MAC]$NORM--------------"
 	arp -vn -i br0 | awk '{gsub(/[()]|at/,"");NF-=3}1'
 	echo "-----------------------------------------"	
@@ -1284,8 +1284,8 @@ uptest= none;
 				sed -i '/\b$LAN_AC_OUT/{/#/!s/^/#/}' /opt/bin/ss-watchdog
 				sed -i '/\$WAN_AC_BP/{/#/!s/^/#/}' /opt/bin/ss-watchdog
 				sleep 1
-				$PREFIX/shadowsocks/shadowsocks flush
-				$PREFIX/shadowsocks/shadowsocks rules	
+				$PREFIX/shadowsocks/shadowsocks -f
+				$PREFIX/shadowsocks/shadowsocks -r	
 				exit 0
    			fi
    			let i++
@@ -1314,8 +1314,8 @@ uptest= none;
 				sed -i '/\w$WAN_AC_IN/{/#/!s/^/#/}' /opt/bin/ss-watchdog
 				sed -i '/\$WAN_AC_BP/{/#/!s/^/#/}' /opt/bin/ss-watchdog		
 				sleep 1
-				$PREFIX/shadowsocks/shadowsocks flush
-				$PREFIX/shadowsocks/shadowsocks rules	
+				$PREFIX/shadowsocks/shadowsocks -f
+				$PREFIX/shadowsocks/shadowsocks -r	
 				exit 0
    			fi
    			let i++
@@ -1323,23 +1323,23 @@ uptest= none;
 	fi	
 	;;
 
-"off_on" )
+-of | --off_on)
 	echo -e "$ansi_white You want to close the proxy?(y/N)$ansi_std"
 	read choice	
 	if [ "${choice}" == "y" ]; then
 		echo -e -n "$ansi_white  Turn off... "
 		sleep 1
 		echo -e "            $ansi_green done. $ansi_std"		
-		$PREFIX/shadowsocks/shadowsocks flush
+		$PREFIX/shadowsocks/shadowsocks -f
 	else
 		echo -e -n "$ansi_white  Turn on... "
 		sleep 1
 		echo -e "            $ansi_green done. $ansi_std"		
-		$PREFIX/shadowsocks/shadowsocks rules		
+		$PREFIX/shadowsocks/shadowsocks -r		
 	fi
 	;;	
 
-"update_scr" )
+-us | --update_scr)
 	yes_or_no() {
     		read -p "$1 ([y]es or [n]o): "
     		case $(echo $REPLY | tr '[A-Z]' '[a-z]') in
@@ -1378,7 +1378,7 @@ uptest= none;
 	echo -e "$ansi_green PASS. $ansi_std"		
 	;;
 
-"backup" )
+-b | --backup)
 	echo -e "$ansi_white You want to backup entware?(y/N)$ansi_std"
 	read choice	
 	if [ "${choice}" == "y" ]; then
@@ -1390,9 +1390,9 @@ uptest= none;
 	echo -e -n $backup
 	sleep 1 
 	echo -e "$ansi_green PASS. $ansi_std"	
-	;;	
-	
-"mail" )
+	;;
+
+-e | --email)
 	curl -s --connect-timeout 1 www.google.com &> /dev/null
 
 	if [ "$?" == "0" ]; then
@@ -1401,14 +1401,14 @@ uptest= none;
 	fi	
 	;;
 						
-"help" )
+-h | --help)
 	shadowsocks
 	;;
 				
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.5.10 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.5.12 $ansi_std"
 	echo -e "$ansi_green # Version: V6.0-1 (MIPS beta version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
@@ -1418,24 +1418,24 @@ uptest= none;
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_white ===================================================================== $ansi_std"
 	echo -e "$ansi_blue WIKI: $ansi_std"
-	echo -e "$ansi_white   [set_up] Set ShadowSocks and ChinaDNS $ansi_std"
-	echo -e "$ansi_white   [modules] Loading module $ansi_std"
-	echo -e "$ansi_white   [run] Running ShadowSocks and ChinaDNS $ansi_std"
-	echo -e "$ansi_white   [rules] Application Firewall Policy $ansi_std"
-	echo -e "$ansi_white   [global] Global Proxy $ansi_std"
-	echo -e "$ansi_white   [flush] Clear firewall policy $ansi_std"
-	echo -e "$ansi_white   [update] Update chnroutes Routing Host $ansi_std"
-	echo -e "$ansi_white   [update_gfwlist] Update GFWLIST domain $ansi_std"
-	echo -e "$ansi_white   [check] Guardian ss-redir* $ansi_std"
-	echo -e "$ansi_white   [check_rules] Guardian iptables rules $ansi_std"
-	echo -e "$ansi_white   [ss_switch] Account switching $ansi_std"
-	echo -e "$ansi_white   [wan_ac] LAN access control $ansi_std"
-	echo -e "$ansi_white   [lan_ac] LAN access control $ansi_std"
-	echo -e "$ansi_white   [off_on] Turn off switch $ansi_std"
-	echo -e "$ansi_white   [update_scr] Update script $ansi_std"
-	echo -e "$ansi_white   [backup] Backup entware $ansi_std"	
-	echo -e "$ansi_white   [mail] Send shadowsocks running information $ansi_std"
-	echo -e "$ansi_white   [help] Script help $ansi_std"
+	echo -e "$ansi_white   [-s/--set_up] Set ShadowSocks and ChinaDNS $ansi_std"
+	echo -e "$ansi_white   [-m/--modules] Loading module $ansi_std"
+	echo -e "$ansi_white   [-S/--START] Running ShadowSocks and ChinaDNS $ansi_std"
+	echo -e "$ansi_white   [-r/--rules] Application Firewall Policy $ansi_std"
+	echo -e "$ansi_white   [-g/--global] Global Proxy $ansi_std"
+	echo -e "$ansi_white   [-f/--flush] Clear firewall policy $ansi_std"
+	echo -e "$ansi_white   [-u/--update] Update chnroutes Routing Host $ansi_std"
+	echo -e "$ansi_white   [-ug/--update_gfwlist] Update GFWLIST domain $ansi_std"
+	echo -e "$ansi_white   [-c/--check] Guardian ss-redir* $ansi_std"
+	echo -e "$ansi_white   [-sr/--check_rules] Guardian iptables rules $ansi_std"
+	echo -e "$ansi_white   [-sw/--ss_switch] Account switching $ansi_std"
+	echo -e "$ansi_white   [-wa/--wan_ac] LAN access control $ansi_std"
+	echo -e "$ansi_white   [-la/--lan_ac] LAN access control $ansi_std"
+	echo -e "$ansi_white   [-of/--off_on] Turn off switch $ansi_std"
+	echo -e "$ansi_white   [-us/--update_scr] Update script $ansi_std"
+	echo -e "$ansi_white   [-b/--backup] Backup entware $ansi_std"	
+	echo -e "$ansi_white   [-e/--email] Send shadowsocks running information $ansi_std"
+	echo -e "$ansi_white   [-h/--help] Script help $ansi_std"
 	echo -e "$ansi_white ===================================================================== $ansi_std"
 	exit 
 	;;
