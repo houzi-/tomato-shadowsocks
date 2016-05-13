@@ -3,7 +3,7 @@ Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com>
 
 Last edited: 2016.5.3
 
-Version: V6.0-1
+Version: V6.0-1(dev)
 
 Explain:
 
