@@ -87,7 +87,7 @@ IPT="iptables -t nat"
 
 case ${1} in
 
--s | --set_up) 
+-su | --set_up) 
 	DECIVE=$(cat /proc/cpuinfo | grep "ARMv7" | grep -v "grep")
 	if [ -z "$DECIVE" ]; then
 		echo -e -n $PLATFORM
