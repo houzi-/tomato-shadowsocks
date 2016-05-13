@@ -129,10 +129,10 @@ case ${1} in
 		echo "if [ ! -f /var/log/auto.run.lock ]; then" >> $autorun
 		echo "	if [ -f /var/notice/wan ]; then" >> $autorun
 		echo -e "		mount -o bind $PREFIX/opt /opt" >> $autorun
-		echo "		shadowsocks run" >> $autorun
-		echo "		shadowsocks modules" >> $autorun
+		echo "		shadowsocks -S" >> $autorun
+		echo "		shadowsocks -m" >> $autorun
 		echo "		if [ -f /var/notice/iptables ]; then" >> $autorun
-		echo "			shadowsocks rules" >> $autorun
+		echo "			shadowsocks -r" >> $autorun
 		echo "		fi" >> $autorun
 		echo "		touch /var/log/auto.run.lock" >> $autorun
 		echo "	fi" >> $autorun
