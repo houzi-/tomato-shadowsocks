@@ -800,7 +800,7 @@ uptest= none;
 	sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json  > /var/log/server.txt
 	
 	if [ -f "$PREFIX/shadowsocks/chnroutes.lock" ]; then
-		$PREFIX/shadowsocks/shadowsocks update
+		$PREFIX/shadowsocks/shadowsocks -u
 	else
 		echo '['$DATE'] Has loaded China route table.' > /var/log/chnroutes.log
 	fi
@@ -1483,7 +1483,7 @@ uptest= none;
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
 	echo -e "$ansi_green # Last edited: 2016.5.13 $ansi_std"
-	echo -e "$ansi_green # Version: V6.0-1 (ARM beta version) $ansi_std"
+	echo -e "$ansi_green # Version: V6.0-stable (ARM version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
 	echo -e "$ansi_green # configuration script in Tomato under$ansi_std. "
