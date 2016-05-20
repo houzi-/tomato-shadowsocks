@@ -266,7 +266,8 @@ case ${1} in
 	echo -e "Your Encryption Method: \033[41;37m ${method} \033[0m"
 	echo "============================================"
 
-	resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
+	ping -q -w1 ${IP} | grep PING | sed -e "s;).*;;" -e "s;.*(;;" > /opt/var/log/resolvip_tmp.txt	
+#	resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
 	if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ] &> /dev/null; then
 		echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks set_up"$NORM
 		exit 0					
@@ -814,7 +815,7 @@ uptest= none;
 	PROCESS=$(ps | grep "ss-redir" | grep -v "grep")
 	if [ -z "$PROCESS" ]; then
 		mount -o bind /opt/sbin/dnsmasq /usr/sbin/dnsmasq && service dnsmasq restart
-#		/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
+		/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
 		/opt/etc/init.d/S22shadowsocks start && touch /var/log/shadowsocks.lock
 #		/opt/etc/init.d/S23ss-tunnel start && touch /var/log/ss-tunnel.lock
 #		/opt/etc/init.d/S26pdnsd start && touch /var/log/pdnsd.lock
@@ -833,9 +834,9 @@ uptest= none;
 					/opt/etc/init.d/S22shadowsocks restart
 #					/opt/etc/init.d/S23ss-tunnel restart
 					rm -f $PREFIX/shadowsocks/flush.lock
-					$PREFIX/shadowsocks/shadowsocks flush
+					$PREFIX/shadowsocks/shadowsocks -f
 					sleep 2
-					$PREFIX/shadowsocks/shadowsocks rules
+					$PREFIX/shadowsocks/shadowsocks -r
 				fi
 			done
 		done
@@ -932,8 +933,8 @@ uptest= none;
 		echo -e "            $ansi_green done. $ansi_std"
 	fi
 
-	$PREFIX/shadowsocks/shadowsocks flush	
-	$PREFIX/shadowsocks/shadowsocks rules			
+	$PREFIX/shadowsocks/shadowsocks -f
+	$PREFIX/shadowsocks/shadowsocks -r		
 	;;
          
 -f | --flush)
@@ -1172,7 +1173,8 @@ uptest= none;
 		echo -e "Your Encryption Method: \033[41;37m ${method} \033[0m"
 		echo "============================================"
 
-		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
+		ping -q -w1 ${IP} | grep PING | sed -e "s;).*;;" -e "s;.*(;;" > /opt/var/log/resolvip_tmp.txt
+#		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
 		if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ] &> /dev/null; then
 			echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks ss_switch"$NORM				
 			exit 0					
@@ -1220,7 +1222,8 @@ uptest= none;
 		echo -e "Your Server IP: \033[41;37m ${IP} \033[0m"
 		echo "============================================"
 
-		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
+		ping -q -w1 ${IP} | grep PING | sed -e "s;).*;;" -e "s;.*(;;" > /opt/var/log/resolvip_tmp.txt
+#		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
 		if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ] &> /dev/null; then
 			echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks mult_switch"$NORM				
 			exit 0					
@@ -1249,7 +1252,7 @@ uptest= none;
 		fi
 	fi
 
-	$PREFIX/shadowsocks/shadowsocks run
+	$PREFIX/shadowsocks/shadowsocks -S
 	service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 	;;
 
@@ -1363,18 +1366,19 @@ uptest= none;
 			touch /var/log/xiaomi_fan.lock
 			nvram set fanctrl_dutycycle=2
 			nvram commit
-			shadowsocks temp
+			shadowsocks -t
 			sleep 1
 			echo -e "            $ansi_green done. $ansi_std"
 		else
-			exit 0
+			:
 		fi
 	fi
 
-	if [ ! $(cat $CHECK/cron.1min/check.sh | grep "temp" | grep -v "grep" | wc -l) -ge 1 ]; then
+	if [ ! $(cat $CHECK/cron.1min/check.sh | grep "t" | grep -v "grep" | wc -l) -ge 1 ]; then
 		sed -i '/^$/d' $CHECK/cron.1min/check.sh
 		echo "shadowsocks -t" >> $CHECK/cron.1min/check.sh
 		mkdir -p $CHECK/sch_script
+		sed -i '/$/G' $CHECK/crontab
 		sed -i '/^$/d' $CHECK/crontab
 		sed -i '$i\0 8 * * * root /opt/bin/run-parts /opt/etc/sch_script\' $CHECK/crontab
 		sed -i '/^$/d' $CHECK/crontab		
@@ -1486,8 +1490,8 @@ uptest= none;
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.5.13 $ansi_std"
-	echo -e "$ansi_green # Version: V6.0-stable (ARM version) $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.5.20 $ansi_std"
+	echo -e "$ansi_green # Version: V6.1-beta (ARM version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
 	echo -e "$ansi_green # configuration script in Tomato under$ansi_std. "

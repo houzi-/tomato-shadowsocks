@@ -262,7 +262,8 @@ case ${1} in
 	echo -e "Your Encryption Method: \033[41;37m ${method} \033[0m"
 	echo "============================================"
 
-	resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
+	ping -q -w1 ${IP} | grep PING | sed -e "s;).*;;" -e "s;.*(;;" > /opt/var/log/resolvip_tmp.txt	
+#	resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
 	if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ]; then
 		echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks set_up"$NORM
 		exit 0					
@@ -1159,7 +1160,8 @@ uptest= none;
 		echo -e "Your Encryption Method: \033[41;37m ${method} \033[0m"
 		echo "============================================"
 
-		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
+		ping -q -w1 ${IP} | grep PING | sed -e "s;).*;;" -e "s;.*(;;" > /opt/var/log/resolvip_tmp.txt	
+#		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
 		if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ] &> /dev/null; then
 			echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks ss_switch"$NORM				
 			exit 0					
@@ -1207,7 +1209,8 @@ uptest= none;
 		echo -e "Your Server IP: \033[41;37m ${IP} \033[0m"
 		echo "============================================"
 
-		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
+		ping -q -w1 ${IP} | grep PING | sed -e "s;).*;;" -e "s;.*(;;" > /opt/var/log/resolvip_tmp.txt		
+#		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
 		if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ] &> /dev/null; then
 			echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks mult_switch"$NORM				
 			exit 0					
@@ -1412,8 +1415,8 @@ uptest= none;
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.5.13 $ansi_std"
-	echo -e "$ansi_green # Version: V6.0-stable (MIPS version) $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.5.20 $ansi_std"
+	echo -e "$ansi_green # Version: V6.1-beta (MIPS version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato MIPS firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
 	echo -e "$ansi_green # configuration script in Tomato under$ansi_std. "

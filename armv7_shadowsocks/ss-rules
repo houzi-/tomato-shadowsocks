@@ -32,8 +32,6 @@ usage() {
 		    -e <extra_options>      extra options for iptables
 		    -o                      apply the rules to the OUTPUT chain
 		    -u                      enable udprelay mode, TPROXY is required
-		    -U                      enable udprelay mode, using different IP
-		                            and ports for TCP and UDP
 		    -G                      enable GFWLIST
 		    -f                      flush the rules
 		    -h                      show this help message and exit
@@ -131,7 +129,7 @@ EOF
 }
 
 tp_rule() {
-	lsmod | grep -q TPROXY || return 0
+	dmesg | grep TPROXY || return 0
 	[ -n "$TPROXY" ] || return 0
 	ip rule add fwmark 0x01/0x01 table 100
 	ip route add local 0.0.0.0/0 dev lo table 100
@@ -175,7 +173,7 @@ gen_iplist() {
 EOF
 }
 
-while getopts ":s:l:S:L:i:e:a:b:w:ouUGfh" arg; do
+while getopts ":s:l:S:L:i:e:a:b:w:ouGfh" arg; do
 	case "$arg" in
 		s)
 			server=$OPTARG
@@ -212,9 +210,6 @@ while getopts ":s:l:S:L:i:e:a:b:w:ouUGfh" arg; do
 			;;
 		U)
 			TPROXY=2
-			;;
-		G)
-			GFWLIST=1
 			;;			
 		f)
 			flush_r
@@ -237,12 +232,9 @@ fi
 if [ "$TPROXY" = 1 ]; then
 	SERVER=$server
 	LOCAL_PORT=$local_port
-elif [ "$TPROXY" = 2 ]; then
-	: ${SERVER:?"You must assign an ip for the udp relay server."}
-	: ${LOCAL_PORT:?"You must assign a port for the udp relay server."}
 fi
 
-if [ -f "$IGNORE_LIST" ]; then
+if [ -n "$IGNORE_LIST" ]; then
 	flush_r && fw_rule && ipset_r && ac_rule && tp_rule
 	[ "$?" = 0 ] && loger 6 "Load chnroutes successful" || loger 3 "Start failed!"
 	exit $?

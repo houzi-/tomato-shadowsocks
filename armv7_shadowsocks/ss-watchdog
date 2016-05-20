@@ -7,6 +7,8 @@
 # See /LICENSE for more information.
 #
 
+#set -x
+
 if [ ! -d "/opt/etc/shadowsocks" ]; then
 	mkdir -p /opt/etc/shadowsocks/WAN_AC_BP && \
 	mkdir -p /opt/etc/shadowsocks/LAN_AC_IN && \
@@ -25,10 +27,10 @@ lan_ac_list_out=/opt/etc/shadowsocks/LAN_AC_OUT/lan_ac.list
 touch a $wan_ac_list_bp
 
 [ ! -f "$lan_ac_list_in" -o ! -f "$lan_ac_list_out" ] && \
-touch a $lan_ac_list_in && \
+touch a $lan_ac_list_in \
 touch a $lan_ac_list_out
 
-WAN_AC_BP=`sort -t'.' -nk1,1 -nk2,3 -nk3,3 -nk4,4 $wan_ac_list_in | xargs`
+WAN_AC_BP=`sort -t'.' -nk1,1 -nk2,3 -nk3,3 -nk4,4 $wan_ac_list_bp | xargs`
 
 LAN_AC_IN=`sort -t'.' -nk1,1 -nk2,3 -nk3,3 -nk4,4 $lan_ac_list_in | xargs`
 LAN_AC_OUT=`sort -t'.' -nk1,1 -nk2,3 -nk3,3 -nk4,4 $lan_ac_list_out | xargs`
@@ -40,4 +42,5 @@ START=$BIN/$PROCS
 $START -s $server_ip -l $local_port -i $ignore_list -o -e "-m multiport --dports 22,80,443" \
 #	-a "w$LAN_AC_IN" \
 #	-a "b$LAN_AC_OUT" \
-#	-b "$WAN_AC_BP"
+#	-b "$WAN_AC_BP" \
+#	-u
