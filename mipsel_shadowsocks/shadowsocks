@@ -1425,7 +1425,7 @@ uptest= none;
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_white ===================================================================== $ansi_std"
 	echo -e "$ansi_blue WIKI: $ansi_std"
-	echo -e "$ansi_white   [-s/--set_up] Set ShadowSocks and ChinaDNS $ansi_std"
+	echo -e "$ansi_white   [-su/--set_up] Set ShadowSocks and ChinaDNS $ansi_std"
 	echo -e "$ansi_white   [-m/--modules] Loading module $ansi_std"
 	echo -e "$ansi_white   [-S/--START] Running ShadowSocks and ChinaDNS $ansi_std"
 	echo -e "$ansi_white   [-r/--rules] Application Firewall Policy $ansi_std"
