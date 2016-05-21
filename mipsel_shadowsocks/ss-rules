@@ -68,7 +68,7 @@ flush_r() {
 }
 
 our_rule() {
-	$IPT -A PREROUTING -d `nvram get wan_ppp_get_ip` \
+	$IPT -A PREROUTING -d `nvram get wan_ipaddr | sed -e 's;$;/32;'` \
 		-j WANPREROUTING && \
 	$IPT -A PREROUTING -d `nvram get lan_ipaddr | sed -e 's;1$;0/255.255.255.0;'` \
 		-i `nvram get wan_iface` -j DROP && \

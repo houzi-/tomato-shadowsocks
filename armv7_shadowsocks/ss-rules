@@ -68,7 +68,7 @@ flush_r() {
 }
 
 our_rule() {
-	$IPT -A PREROUTING -d `nvram get wan_gateway | sed -e 's;$;/32;'` \
+	$IPT -A PREROUTING -d `nvram get wan_ipaddr | sed -e 's;$;/32;'` \
 		-j WANPREROUTING && \
 	$IPT -t nat -A POSTROUTING -o `nvram get wan_iface` \
 		-j MASQUERADE && \
