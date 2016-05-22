@@ -20,3 +20,7 @@ See /LICENSE for more information.
 
 # Installation
 **See my [Tomato-ShadowSocks(armv7+mipsel)](http://www.router008.com/2016/05/09/Tomato-ShadowSocks/)**
+
+# Note
+
+Give up on mipsel architecture script maintenance!
