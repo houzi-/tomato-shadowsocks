@@ -1338,11 +1338,13 @@ uptest= none;
 		sleep 1
 		echo -e "            $ansi_green done. $ansi_std"		
 		$PREFIX/shadowsocks/shadowsocks -f
+		sed -i "s/^\(shadowsocks \(-c\|-cr\)\)/#\1/" /opt/etc/cron.1min/check.sh
 	else
 		echo -e -n "$ansi_white  Turn on... "
 		sleep 1
 		echo -e "            $ansi_green done. $ansi_std"		
-		$PREFIX/shadowsocks/shadowsocks -r		
+		$PREFIX/shadowsocks/shadowsocks -r
+		sed -i "s/#\(shadowsocks \(-c\|-cr\)\)/\1/" /opt/etc/cron.1min/check.sh		
 	fi
 	;;	
 
