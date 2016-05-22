@@ -23,4 +23,4 @@ See /LICENSE for more information.
 
 # Note
 
-Give up on mipsel architecture script maintenance!
+**<u>Give up on mipsel architecture script maintenance!</u>**
