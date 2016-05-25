@@ -1254,105 +1254,6 @@ uptest= none;
 	service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 	;;
 
--wa | --wan_ac)
-	echo -e "$ansi_white Forwarding the list within?(y/N)$ansi_std"
-	read choice
-	if [ "${choice}" == "y" ]; then
-		sed -i '/\w$WAN_AC_FW/s/^\s*#//' /opt/bin/ss-watchdog && \
-			touch a /opt/var/log/wan_ac_fw.lock
-		[ -f "/opt/var/log/wan_ac_bp.lock" ] && sed -i '/\$WAN_AC_BP/s/^\s*#//' /opt/bin/ss-watchdog
-		[ -f "/opt/var/log/lan_ac_in.lock" ] && sed -i '/\w$LAN_AC_IN/{/#/!s/^/#/}' /opt/bin/ss-watchdog
-		[ -f "/opt/var/log/lan_ac_out.lock" ] && sed -i '/\b$LAN_AC_OUT/{/#/!s/^/#/}' /opt/bin/ss-watchdog
-	else
-		sed -i '/\$WAN_AC_BP/s/^\s*#//' /opt/bin/ss-watchdog && \
-			touch a /opt/var/log/wan_ac_bp.lock
-		[ -f "/opt/var/log/wan_ac_fw.lock" ] && sed -i '/\w$WAN_AC_FW/s/^\s*#//' /opt/bin/ss-watchdog
-		[ -f "/opt/var/log/lan_ac_in.lock" ] && sed -i '/\w$LAN_AC_IN/{/#/!s/^/#/}' /opt/bin/ss-watchdog
-		[ -f "/opt/var/log/lan_ac_out.lock" ] && sed -i '/\b$LAN_AC_OUT/{/#/!s/^/#/}' /opt/bin/ss-watchdog		
-	fi
-	sleep 1
-	$PREFIX/shadowsocks/shadowsocks -f
-	$PREFIX/shadowsocks/shadowsocks -r
-	;;
-
--la | --lan_ac)
-	echo -e "-------$BOLD[IP]$NORM-----------$BOLD[MAC]$NORM--------------"
-	arp -vn -i br0 | awk '{gsub(/[()]|at/,"");NF-=3}1'
-	echo "-----------------------------------------"	
-	
-	echo -e "$ansi_white Allow list within?(y/N)$ansi_std"
-	read choice
-	if [ "${choice}" == "y" ]; then
-		i=1
-		sed -i '/^$/d' $CHECK/shadowsocks/LAN_AC_IN/lan_ac.list		
-		echo "please input your ips: "
-		while :
-		do
-   			read ip
-   			if [[ ${ip} != "" ]]  &> /dev/null && echo -e $INFO OK!
-   			then
-				get_lan_ip() {
-					cat <<-EOF | grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}"
-						${ip}
-				EOF
-				}
-				sed -i '/$/G' $CHECK/shadowsocks/LAN_AC_IN/lan_ac.list
-				sed -i '/^$/d' $CHECK/shadowsocks/LAN_AC_IN/lan_ac.list					
-				echo $(get_lan_ip) >> $CHECK/shadowsocks/LAN_AC_IN/lan_ac.list
-				grep -n '^$' $CHECK/shadowsocks/LAN_AC_IN/lan_ac.list > /dev/null;echo $? > /tmp/null.log
-				null=`cat /tmp/null.log`
-				[ "$null" == "0" ] && exit 0
-   			else
-				echo -e $INFO OK!
-				sed -i '/\w$LAN_AC_IN/s/^\s*#//' /opt/bin/ss-watchdog && \
-					touch a /opt/var/log/lan_ac_in.lock
-				[ -f "/opt/var/log/lan_ac_out.lock" ] && sed -i '/\b$LAN_AC_OUT/{/#/!s/^/#/}' /opt/bin/ss-watchdog
-				[ -f "/opt/var/log/wan_ac_bp.lock" ] && sed -i '/\$WAN_AC_BP/{/#/!s/^/#/}' /opt/bin/ss-watchdog
-				[ -f "/opt/var/log/wan_ac_fw.lock" ] && sed -i '/\w$WAN_AC_FW/{/#/!s/^/#/}' /opt/bin/ss-watchdog
-				sleep 1
-				$PREFIX/shadowsocks/shadowsocks -f
-				$PREFIX/shadowsocks/shadowsocks -r	
-				exit 0
-   			fi
-   			let i++
-		done		
-	else
-		i=1
-		sed -i '/^$/d' $CHECK/shadowsocks/LAN_AC_OUT/lan_ac.list		
-		echo "please input your ips: "
-		while :
-		do
-   			read ip
-   			if [[ ${ip} != "" ]]  &> /dev/null && echo -e $INFO OK!
-   			then
-				get_lan_ip() {
-					cat <<-EOF | grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}"
-						${ip}
-				EOF
-				}
-				sed -i '/$/G' $CHECK/shadowsocks/LAN_AC_OUT/lan_ac.list
-				sed -i '/^$/d' $CHECK/shadowsocks/LAN_AC_OUT/lan_ac.list				
-				echo $(get_lan_ip) >> $CHECK/shadowsocks/LAN_AC_OUT/lan_ac.list
-				grep -n '^$' $CHECK/shadowsocks/LAN_AC_OUT/lan_ac.list > /dev/null;echo $? > /tmp/null.log
-				null=`cat /tmp/null.log`
-				[ "$null" == "0" ] && exit 0
-   			else
-				echo -e $INFO OK!
-				sed -i '/\b$LAN_AC_OUT/s/^\s*#//' /opt/bin/ss-watchdog && \
-					touch a /opt/var/log/lan_ac_out.lock					
-				[ -f "/opt/var/log/lan_ac_in.lock" ] && sed -i '/\w$LAN_AC_IN/{/#/!s/^/#/}' /opt/bin/ss-watchdog
-				[ -f "/opt/var/log/wan_ac_bp.lock" ] && sed -i '/\$WAN_AC_BP/{/#/!s/^/#/}' /opt/bin/ss-watchdog
-				[ -f "/opt/var/log/wan_ac_fw.lock" ] && sed -i '/\w$WAN_AC_FW/{/#/!s/^/#/}' /opt/bin/ss-watchdog	
-				sleep 1
-				$PREFIX/shadowsocks/shadowsocks -f
-				$PREFIX/shadowsocks/shadowsocks -r	
-				exit 0
-   			fi
-   			let i++
-		done	
-	fi	
-	;;
-
 -of | --off_on)
 	echo -e "$ansi_white You want to close the proxy?(y/N)$ansi_std"
 	read choice	
@@ -1523,8 +1424,6 @@ uptest= none;
 	echo -e "$ansi_white   [-c/--check] Guardian ss-redir* $ansi_std"
 	echo -e "$ansi_white   [-cr/--check_rules] Guardian iptables rules $ansi_std"
 	echo -e "$ansi_white   [-sw/--ss_switch] Account switching $ansi_std"
-	echo -e "$ansi_white   [-wa/--wan_ac] LAN access control $ansi_std"
-	echo -e "$ansi_white   [-la/--lan_ac] LAN access control $ansi_std"
 	echo -e "$ansi_white   [-of/--off_on] Turn off switch $ansi_std"
 	echo -e "$ansi_white   [-us/--update_scr] Update script $ansi_std"
 	echo -e "$ansi_white   [-b/--backup] Backup entware $ansi_std"	
