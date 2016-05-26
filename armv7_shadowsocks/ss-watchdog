@@ -16,8 +16,8 @@ if [ ! -d "/opt/etc/shadowsocks" ]; then
 	mkdir -p /opt/etc/shadowsocks/LAN_AC_OUT
 fi
 
-server_ip=`sed -n 's/.*ver":"\(.*\)".*/\1/p' /opt/etc/shadowsocks.json`
-local_port=`sed -n 's/.*l_port":\(.*\)/\1/p' /opt/etc/shadowsocks.json | sed 's/,//g'`
+server_ip=`sed -n 's/.*ver": *"\(.*\)".*/\1/p' /opt/etc/shadowsocks.json`
+local_port=`sed -n 's/.*l_port": *\(.*\)/\1/p' /opt/etc/shadowsocks.json | sed 's/,//g'`
 ignore_list=/opt/etc/ignore.list
 global_list=/opt/etc/global.list
 wan_ac_list_bp=/opt/etc/shadowsocks/WAN_AC_BP/wan_bp.list

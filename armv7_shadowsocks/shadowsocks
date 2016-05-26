@@ -1254,6 +1254,30 @@ uptest= none;
 	service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 	;;
 
+-lc | --lan_control)
+	echo -e "$ansi_white Allow list to proxy?(y/N)$ansi_std"
+	read choice
+	if [ "${choice}" == "y" ]; then
+		if [ -s /opt/etc/shadowsocks/LAN_AC_IN/lan_ac.list ]; then		
+			sed -i "s;B\$LAN_AC_OUT;W\$LAN_AC_IN;g" /opt/bin/ss-watchdog
+		fi
+		$PREFIX/shadowsocks/shadowsocks -f && \
+		$PREFIX/shadowsocks/shadowsocks -r
+		echo -e -n "$ansi_white List_in... "
+		sleep 1
+		echo -e "            $ansi_green done. $ansi_std"
+	else
+		if [ -s /opt/etc/shadowsocks/LAN_AC_OUT/lan_ac.list ]; then		
+			sed -i "s;W\$LAN_AC_IN;B\$LAN_AC_OUT;g" /opt/bin/ss-watchdog
+		fi
+		$PREFIX/shadowsocks/shadowsocks -f && \
+		$PREFIX/shadowsocks/shadowsocks -r
+		echo -e -n "$ansi_white List_out... "
+		sleep 1
+		echo -e "            $ansi_green done. $ansi_std"
+	fi
+	;;
+
 -of | --off_on)
 	echo -e "$ansi_white You want to close the proxy?(y/N)$ansi_std"
 	read choice	
@@ -1403,7 +1427,7 @@ uptest= none;
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.5.25 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.5.26 $ansi_std"
 	echo -e "$ansi_green # Version: V6.0-stable (ARM version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
@@ -1424,6 +1448,7 @@ uptest= none;
 	echo -e "$ansi_white   [-c/--check] Guardian ss-redir* $ansi_std"
 	echo -e "$ansi_white   [-cr/--check_rules] Guardian iptables rules $ansi_std"
 	echo -e "$ansi_white   [-sw/--ss_switch] Account switching $ansi_std"
+	echo -e "$ansi_white   [-lc/--lan_control] LAN Device control $ansi_std"
 	echo -e "$ansi_white   [-of/--off_on] Turn off switch $ansi_std"
 	echo -e "$ansi_white   [-us/--update_scr] Update script $ansi_std"
 	echo -e "$ansi_white   [-b/--backup] Backup entware $ansi_std"	
