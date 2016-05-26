@@ -195,8 +195,8 @@ while getopts ":s:l:i:e:a:b:w:ouGfh" arg; do
 		u)
 			TPROXY=1
 			;;
-		U)
-			TPROXY=2
+		G)
+			GFWLIST=1
 			;;			
 		f)
 			flush_r
