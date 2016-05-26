@@ -828,7 +828,7 @@ uptest= none;
 #		/opt/etc/init.d/S26pdnsd start && touch /var/log/pdnsd.lock
 #		/opt/etc/init.d/S24chinadns start && touch /var/log/chinadns.lock
 #		/opt/etc/init.d/S27pcap_dnsproxy start && touch /var/log/pcap_dnsproxy.lock
-		/opt/etc/init.d/S29dnscrypt-proxy start && touch /var/log/dnscrypt-proxy.lock
+#		/opt/etc/init.d/S29dnscrypt-proxy start && touch /var/log/dnscrypt-proxy.lock
 		/opt/etc/init.d/S00timezone start
 		/opt/etc/init.d/S10cron start
 		exit 0	
