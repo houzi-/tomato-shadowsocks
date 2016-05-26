@@ -44,7 +44,7 @@ START=$BIN/$PROCS
 	
 $START -s $server_ip -l $local_port -i $ignore_list -o -e "-m multiport --dports 22,80,443" \
 	-a "w$LAN_AC_IN" \
-	-u \
 	-a "b$LAN_AC_OUT" \
 	-b "$WAN_AC_BP" \
 	-w "$WAN_AC_FW"
+#	-u	
