@@ -46,4 +46,4 @@ $START -s $server_ip -l $local_port -i $ignore_list -o -e "-m multiport --dports
 	-a "W$LAN_AC_IN" \
 	-b "$WAN_AC_BP" \
 	-w "$WAN_AC_FW" \
-	-u	
+#	-u	
