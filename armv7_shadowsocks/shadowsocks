@@ -10,6 +10,13 @@
 
 # Debug 
 #set -x
+
+# opkg source site
+OPKG_SITE="http://entware.mirrors.ligux.com/binaries"
+
+# Architecture
+ARCH="armv7"
+
 # SMTP server (EP:"smtp.gmail.com")
 SMTP="smtp.163.com"
 # Send E-mail Username
@@ -101,7 +108,7 @@ case ${1} in
 			cd $PREFIX;mkdir -p opt;mkdir -p shadowsocks;cd /;cd /tmp/home/root
 			cp $SCRIPT_DIR/shadowsocks $PREFIX/shadowsocks
 			mount -o bind $PREFIX/opt /opt
-			cd /opt && wget -O - http://pkg.entware.net/binaries/armv7/installer/entware_install.sh | sh			
+			cd /opt && wget -O - $OPKG_SITE/$ARCH/installer/entware_install.sh | sh			
 			if [ -e $SCRIPT_DIR/china* -a -e $SCRIPT_DIR/cron* -a -e $SCRIPT_DIR/dif* -a -e $SCRIPT_DIR/pcap_dns* -a -e $SCRIPT_DIR/pdns* -a -e $SCRIPT_DIR/resol* -a -e $SCRIPT_DIR/shadowsocks-libe* -a -e $SCRIPT_DIR/dnscryp* -a -e $SCRIPT_DIR/zone* -a -e $SCRIPT_DIR/dnsma* ]; then
 				cd $SCRIPT_DIR && opkg install --force-checksum china* pdnsd* pcap* reso* shadow* diff* dnscr* dnsma* cron* zonei* bash
 				echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
@@ -1296,6 +1303,25 @@ uptest= none;
 	fi
 	;;			
 
+-sa | --services_action)
+	case ${2} in
+		start|stop|restart|reconfigure|check|kill)
+			echo -e "$ansi_red **WARNING** USE AT YOUR OWN RISK! You want to ${2} all service under /opt/etc/init.d?(y/N) $ansi_std"
+			read choice	
+			if [ "${choice}" == "y" ]; then
+				echo -e  "$ansi_white  ${2} all service... $ansi_std"
+				sleep 1
+				echo -e "            $ansi_green done. $ansi_std"		
+				/opt/etc/init.d/rc.unslung ${2}
+			else
+				echo -e "$ansi_white Abort. $ansi_std"
+			fi
+		;;
+	*)
+		echo -e "$ansi_white Wrong action ${2} $ansi_std"
+	esac
+	;;
+	
 -t | --temp)
 	if [ ! -f "/var/log/xiaomi_fan.lock" ]; then	
 		if [ "$xiaomi_fan" == "1" ]; then
@@ -1437,7 +1463,7 @@ uptest= none;
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_white ===================================================================== $ansi_std"
 	echo -e "$ansi_blue WIKI: $ansi_std"
-	echo -e "$ansi_white   [-s/--set_up] Set ShadowSocks and ChinaDNS $ansi_std"
+	echo -e "$ansi_white   [-su/--set_up] Set ShadowSocks and ChinaDNS $ansi_std"
 	echo -e "$ansi_white   [-m/--modules] Loading module $ansi_std"
 	echo -e "$ansi_white   [-S/--START] Running ShadowSocks and ChinaDNS $ansi_std"
 	echo -e "$ansi_white   [-r/--rules] Application Firewall Policy $ansi_std"
@@ -1450,6 +1476,8 @@ uptest= none;
 	echo -e "$ansi_white   [-sw/--ss_switch] Account switching $ansi_std"
 	echo -e "$ansi_white   [-lc/--lan_control] LAN Device control $ansi_std"
 	echo -e "$ansi_white   [-of/--off_on] Turn off switch $ansi_std"
+	echo -e "$ansi_white   [-sa/--services_action {start|stop|restart|reconfigure|check|kill}] 
+			Process services under /opt/etc/init.d with action $ansi_std"
 	echo -e "$ansi_white   [-us/--update_scr] Update script $ansi_std"
 	echo -e "$ansi_white   [-b/--backup] Backup entware $ansi_std"	
 	echo -e "$ansi_white   [-e/--email] Send shadowsocks running information $ansi_std"
