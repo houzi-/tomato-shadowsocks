@@ -1283,42 +1283,44 @@ uptest= none;
 		sleep 1
 		echo -e "            $ansi_green done. $ansi_std"
 	fi
-	;;
-
--of | --off_on)
-	echo -e "$ansi_white You want to close the proxy?(y/N)$ansi_std"
-	read choice	
-	if [ "${choice}" == "y" ]; then
-		echo -e -n "$ansi_white  Turn off... "
-		sleep 1
-		echo -e "            $ansi_green done. $ansi_std"		
-		$PREFIX/shadowsocks/shadowsocks -f
-		sed -i "s/^\(shadowsocks \(-c\|-cr\)\)/#\1/" /opt/etc/cron.1min/check.sh
-	else
-		echo -e -n "$ansi_white  Turn on... "
-		sleep 1
-		echo -e "            $ansi_green done. $ansi_std"		
-		$PREFIX/shadowsocks/shadowsocks -r
-		sed -i "s/#\(shadowsocks \(-c\|-cr\)\)/\1/" /opt/etc/cron.1min/check.sh		
-	fi
-	;;			
+	;;		
 
 -sa | --services_action)
 	case ${2} in
-		start|stop|restart|reconfigure|check|kill)
+		stop)
 			echo -e "$ansi_red **WARNING** USE AT YOUR OWN RISK! You want to ${2} all service under /opt/etc/init.d?(y/N) $ansi_std"
 			read choice	
 			if [ "${choice}" == "y" ]; then
-				echo -e  "$ansi_white  ${2} all service... $ansi_std"
-				sleep 1
-				echo -e "            $ansi_green done. $ansi_std"		
 				/opt/etc/init.d/rc.unslung ${2}
+				if [ "${2}" == "stop" ]; then
+					cp $CHECK/dnsmasq.conf $CHECK/dnsmasq.conf.bak
+					cp /tmp/etc/dnsmasq.conf $CHECK/dnsmasq.conf
+					$PREFIX/shadowsocks/shadowsocks -f
+					service dnsmasq restart
+				fi			
 			else
-				echo -e "$ansi_white Abort. $ansi_std"
+				: ${warning:?"You do not have any operations."}
 			fi
 		;;
+
+		start)
+			echo -e "$ansi_red **WARNING** USE AT YOUR OWN RISK! You want to ${2} all service under /opt/etc/init.d?(y/N) $ansi_std"
+			read choice	
+			if [ "${choice}" == "y" ]; then
+				if [ "${2}" == "start" ]; then
+					cp $CHECK/dnsmasq.conf.bak $CHECK/dnsmasq.conf
+					$PREFIX/shadowsocks/shadowsocks -f && \
+					$PREFIX/shadowsocks/shadowsocks -S && \
+					$PREFIX/shadowsocks/shadowsocks -r
+					service dnsmasq restart
+				fi
+			else
+				: ${warning:?"You do not have any operations."}
+			fi
+		;;
+ 
 	*)
-		echo -e "$ansi_white Wrong action ${2} $ansi_std"
+		echo -e "$ansi_white usage: [stop|start] $ansi_std"
 	esac
 	;;
 	
@@ -1453,8 +1455,8 @@ uptest= none;
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.5.26 $ansi_std"
-	echo -e "$ansi_green # Version: V6.0-stable (ARM version) $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.5.27 $ansi_std"
+	echo -e "$ansi_green # Version: V6.2-beta (ARM version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
 	echo -e "$ansi_green # configuration script in Tomato under$ansi_std. "
@@ -1475,9 +1477,7 @@ uptest= none;
 	echo -e "$ansi_white   [-cr/--check_rules] Guardian iptables rules $ansi_std"
 	echo -e "$ansi_white   [-sw/--ss_switch] Account switching $ansi_std"
 	echo -e "$ansi_white   [-lc/--lan_control] LAN Device control $ansi_std"
-	echo -e "$ansi_white   [-of/--off_on] Turn off switch $ansi_std"
-	echo -e "$ansi_white   [-sa/--services_action {start|stop|restart|reconfigure|check|kill}] 
-			Process services under /opt/etc/init.d with action $ansi_std"
+	echo -e "$ansi_white   [-sa/--services_action] Change all state services $ansi_std"
 	echo -e "$ansi_white   [-us/--update_scr] Update script $ansi_std"
 	echo -e "$ansi_white   [-b/--backup] Backup entware $ansi_std"	
 	echo -e "$ansi_white   [-e/--email] Send shadowsocks running information $ansi_std"
