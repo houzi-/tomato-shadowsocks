@@ -796,10 +796,12 @@ uptest= none;
 
 -m | --modules)
 	echo -e -n "$ansi_white Loading ipset module... "
-	for module in ip_set ip_set_bitmap_ip ip_set_bitmap_ipmac ip_set_bitmap_port ip_set_hash_ip ip_set_hash_ipport ip_set_hash_ipportip ip_set_hash_ipportnet ip_set_hash_net ip_set_hash_netport ip_set_list_set xt_set
-	do
-		modprobe $module
-	done
+	if [ ! "`lsmod | grep xt_set | wc -l`" -eq 2 ]; then
+		for module in ip_set ip_set_bitmap_ip ip_set_bitmap_ipmac ip_set_bitmap_port ip_set_hash_ip ip_set_hash_ipport ip_set_hash_ipportip ip_set_hash_ipportnet ip_set_hash_net ip_set_hash_netport ip_set_list_set xt_set
+		do
+			modprobe $module
+		done
+	fi
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"
 	;;
@@ -820,7 +822,7 @@ uptest= none;
 	fi	
 	
 	PROCESS=$(ps | grep "ss-redir" | grep -v "grep")
-	if [ -z "$PROCESS" ]; then	
+	if [ -z "$PROCESS" ]; then
 		mount -o bind /opt/sbin/dnsmasq /usr/sbin/dnsmasq && service dnsmasq restart
 #		/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
 		/opt/etc/init.d/S22shadowsocks start && touch /var/log/shadowsocks.lock
@@ -831,7 +833,7 @@ uptest= none;
 #		/opt/etc/init.d/S29dnscrypt-proxy start && touch /var/log/dnscrypt-proxy.lock
 		/opt/etc/init.d/S00timezone start
 		/opt/etc/init.d/S10cron start
-		exit 0	
+		exit 0
 	else
 		for i in `cat /var/log/server.txt`;do
         		for j in `cat $PREFIX/opt/var/log/server.txt`;do
@@ -853,7 +855,7 @@ uptest= none;
 -r | --rules)
 	sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json  > $PREFIX/opt/var/log/server.txt
 	/opt/etc/init.d/S99ss-rules start
-	sleep 5
+	adm_put=$PREFIX/shadowsocks/adm_ignore.list
 	if [ "$adm_filter" == "1" ]; then
 		if [ ! -f $adm_put ]; then
 			adm_put=$PREFIX/shadowsocks/adm_ignore.list
@@ -877,7 +879,7 @@ uptest= none;
 			EOF
 		fi
 
-		adm_put=$PREFIX/shadowsocks/adm_ignore.list
+		sleep 5		
 		$IPT -N ADM_AC
 		$IPT -N ADM_FW
 		sed -e "s/^/-A adm_wan_ac &/g" -e "1 i\-N adm_wan_ac hash:net hashsize 65536" $adm_put | ipset -R -!
@@ -1455,7 +1457,7 @@ uptest= none;
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.5.27 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.5.29 $ansi_std"
 	echo -e "$ansi_green # Version: V6.2-beta (ARM version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
