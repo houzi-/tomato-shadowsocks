@@ -86,8 +86,8 @@ ZONE=/opt/share/zoneinfo/Hongkong
 # Link
 gfw_block_list="https://raw.githubusercontent.com/koolshare/koolshare.github.io/master/maintain_files/gfwlist.conf"
 china_routing_list="http://entware.mirrors.ligux.com/apnic/delegated-apnic-latest"
-china_domain_list="https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf"
-china_google_list="https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/google.china.conf"
+china_domain_list="http://entware.mirrors.ligux.com/dnsmasq-china-list/accelerated-domains.china.conf"
+china_google_list="http://entware.mirrors.ligux.com/dnsmasq-china-list/google.china.conf"
 
 # alias of iptables
 IPT="iptables -t nat"
