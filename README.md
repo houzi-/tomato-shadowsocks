@@ -1,9 +1,9 @@
 #tomato-shadowsocks script
 Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com>
 
-Last edited: 2016.5.22
+Last edited: 2016.5.29
 
-Version: V6.1-stable
+Version: V6.2-stable
 
 Explain:
 
@@ -23,4 +23,7 @@ See /LICENSE for more information.
 
 # Note
 
-**<u>Give up on mipsel architecture script maintenance!</u>**
+**<u>
+Starting from version 6.1 is no longer supported!</u>**
+
+[mipsel_shadowsocks](https://github.com/houzi-/tomato-shadowsocks/releases/tag/v6.1-stable)**
