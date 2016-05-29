@@ -26,4 +26,4 @@ See /LICENSE for more information.
 **<u>
 Starting from version 6.1 is no longer supported!</u>**
 
-[mipsel_shadowsocks](https://github.com/houzi-/tomato-shadowsocks/releases/tag/v6.1-stable)**
+[mipsel_shadowsocks](https://github.com/houzi-/tomato-shadowsocks/releases/tag/v6.1-stable/)**
