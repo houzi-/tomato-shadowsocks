@@ -98,7 +98,7 @@ fw_rule() {
 		exit 1
 	}
 #	$IPT -I PREROUTING -p udp --dport 53 \
-		-j REDIRECT --to-ports 5353
+#		-j REDIRECT --to-ports 5353
 	return $?
 }
 
