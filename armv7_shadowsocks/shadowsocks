@@ -868,6 +868,20 @@ uptest= none;
 		ipset -X adm_wan_ac 2>/dev/null		
 	}
 
+	case ${2} in
+		stop)
+			echo -e "$ansi_red **WARNING** USE AT YOUR OWN RISK! You want to ${2} adm?(y/N) $ansi_std"
+			read choice	
+			if [ "${choice}" == "y" ]; then
+				/opt/etc/init.d/S30adm ${2}
+				ipset_f
+				exit 0
+			else
+				: ${warning:?"You do not have any operations."}
+			fi
+		;;
+		esac	
+	
 	ipset_r() {
 		ipset_f
 		ipset -! -R <<-EOF || return 1
