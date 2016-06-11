@@ -109,8 +109,8 @@ case ${1} in
 			cp $SCRIPT_DIR/shadowsocks $PREFIX/shadowsocks
 			mount -o bind $PREFIX/opt /opt
 			cd /opt && wget -O - $OPKG_SITE/$ARCH/installer/entware_install.sh | sh			
-			if [ -e $SCRIPT_DIR/china* -a -e $SCRIPT_DIR/cron* -a -e $SCRIPT_DIR/dif* -a -e $SCRIPT_DIR/pcap_dns* -a -e $SCRIPT_DIR/pdns* -a -e $SCRIPT_DIR/resol* -a -e $SCRIPT_DIR/shadowsocks-libe* -a -e $SCRIPT_DIR/dnscryp* -a -e $SCRIPT_DIR/zone* -a -e $SCRIPT_DIR/dnsma* ]; then
-				cd $SCRIPT_DIR && opkg install --force-checksum china* pdnsd* pcap* reso* shadow* diff* dnscr* dnsma* cron* zonei* bash
+			if [ -e $SCRIPT_DIR/china* -a -e $SCRIPT_DIR/cron* -a -e $SCRIPT_DIR/dif* -a -e $SCRIPT_DIR/pcap_dns* -a -e $SCRIPT_DIR/pdns* -a -e $SCRIPT_DIR/shadowsocks-libe* -a -e $SCRIPT_DIR/dnscryp* -a -e $SCRIPT_DIR/zone* -a -e $SCRIPT_DIR/dnsma* ]; then
+				cd $SCRIPT_DIR && opkg install --force-checksum china* pdnsd* pcap* shadow* diff* dnscr* dnsma* cron* zonei* bash
 				echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
 				sleep 5
 				ln -s $PREFIX/shadowsocks/shadowsocks /opt/bin
@@ -179,12 +179,12 @@ case ${1} in
 
 	BIN=/opt/bin
 	SBIN=/opt/sbin
-	echo -e "chinadns \ncrontab \ndiff \ndnscrypt-proxy \nPcap_DNSProxy \npdnsd-ctl \nresolvip \nss-redir \ndnsmasq \nzoneinfo_asia" > /var/log/find.txt	
+	echo -e "chinadns \ncrontab \ndiff \ndnscrypt-proxy \nPcap_DNSProxy \npdnsd-ctl \nss-redir \ndnsmasq \nzoneinfo_asia" > /var/log/find.txt	
 	cd $BIN
-	if [ ! -f chinadns -o ! -f Pcap_DNSProxy -o ! -f ss-redir -o ! -f resolvip -o ! -f pdnsd-ctl -o ! -f diff -o ! -f dnscrypt-proxy ]; then	
-		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy crontab > /var/log/find_N.txt
+	if [ ! -f chinadns -o ! -f Pcap_DNSProxy -o ! -f ss-redir -o ! -f pdnsd-ctl -o ! -f diff -o ! -f dnscrypt-proxy ]; then	
+		ls -1 chinadns Pcap_DNSProxy ss-redir pdnsd-ctl diff dnscrypt-proxy crontab > /var/log/find_N.txt
 	else
-		ls -1 chinadns Pcap_DNSProxy ss-redir resolvip pdnsd-ctl diff dnscrypt-proxy crontab > /var/log/find_N.txt
+		ls -1 chinadns Pcap_DNSProxy ss-redir pdnsd-ctl diff dnscrypt-proxy crontab > /var/log/find_N.txt
 	fi
 	cd /
 	
@@ -216,7 +216,7 @@ case ${1} in
 		echo -e "$ansi_white zoneinfo_asia"
 	fi
 	
-	find $BIN/chinadns $BIN/Pcap_DNSProxy $BIN/ss-redir $BIN/resolvip $BIN/pdnsd-ctl $BIN/diff $BIN/dnscrypt-proxy $BIN/crontab $SBIN/dnsmasq $ZONE &> /dev/null;echo $? > /var/log/diff.txt
+	find $BIN/chinadns $BIN/Pcap_DNSProxy $BIN/ss-redir $BIN/pdnsd-ctl $BIN/diff $BIN/dnscrypt-proxy $BIN/crontab $SBIN/dnsmasq $ZONE &> /dev/null;echo $? > /var/log/diff.txt
 	DIFF=`sed -n '1p' /var/log/diff.txt`
 	diff -w /var/log/find.txt /var/log/find_N.txt | grep \^\< > /var/log/diff_show.txt
 	if [ "$DIFF" == "0" ]; then
@@ -224,13 +224,13 @@ case ${1} in
 		sleep 1 
 		echo -e "$ansi_green PASS. $ansi_std"
 	else
-		if [ ! -e $BIN/chinadns -a ! -e $BIN/crontab -a ! -e $BIN/diff -a ! -e $BIN/Pcap_DNSProxy -a ! -e $BIN/pdnsd-ctl -a ! -e $BIN/resolvip -a ! -e $BIN/ss-redir -a ! -e $BIN/dnscrypt-proxy -a ! -e $SBIN/dnsmasq -a ! -e $ZONE ]; then
+		if [ ! -e $BIN/chinadns -a ! -e $BIN/crontab -a ! -e $BIN/diff -a ! -e $BIN/Pcap_DNSProxy -a ! -e $BIN/pdnsd-ctl -a ! -e $BIN/ss-redir -a ! -e $BIN/dnscrypt-proxy -a ! -e $SBIN/dnsmasq -a ! -e $ZONE ]; then
 			echo -e $DEPENDENCE
 			sleep 1
 			echo -e "$ansi_red ERROR. $ansi_std"
 			echo -e "$WARNING \n$BOLD Please install the following software:"$NORM
 			rm -rf $PREFIX/opt
-			echo -e $ansi_white"shadowsocks-libev \nchinadns \npdnsd \npcap-dnsproxy \nresolvip \ndiffutils \ncrontab \ndnscrypt-proxy \ndnsmasq \nzoneinfo_asia"$ansi_std
+			echo -e $ansi_white"shadowsocks-libev \nchinadns \npdnsd \npcap-dnsproxy \ndiffutils \ncrontab \ndnscrypt-proxy \ndnsmasq \nzoneinfo_asia"$ansi_std
 			exit 0
 		else	
 			echo -e $DEPENDENCE
@@ -274,7 +274,6 @@ case ${1} in
 	echo "============================================"
 
 	ping -q -w1 ${IP} | grep PING | sed -e "s;).*;;" -e "s;.*(;;" > /opt/var/log/resolvip_tmp.txt
-#	resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
 	if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ] &> /dev/null; then
 		echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks set_up"$NORM
 		exit 0					
@@ -1198,7 +1197,6 @@ uptest= none;
 		echo "============================================"
 
 		ping -q -w1 ${IP} | grep PING | sed -e "s;).*;;" -e "s;.*(;;" > /opt/var/log/resolvip_tmp.txt
-#		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
 		if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ] &> /dev/null; then
 			echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks ss_switch"$NORM				
 			exit 0					
@@ -1247,7 +1245,6 @@ uptest= none;
 		echo "============================================"
 
 		ping -q -w1 ${IP} | grep PING | sed -e "s;).*;;" -e "s;.*(;;" > /opt/var/log/resolvip_tmp.txt
-#		resolvip -t 10 ${IP} > /opt/var/log/resolvip_tmp.txt
 		if [ `cat /opt/var/log/resolvip_tmp.txt | cut -d"." -f1` == `resolvip -t 10 192. | cut -d"." -f1` ] &> /dev/null; then
 			echo -e "$WARNING You input an incorrect IP, please re-enter your: $ansi_white \nshadowsocks mult_switch"$NORM				
 			exit 0					
