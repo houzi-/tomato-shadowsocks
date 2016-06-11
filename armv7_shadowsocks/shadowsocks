@@ -926,53 +926,39 @@ uptest= none;
 	ipset_r && fw_rules
 	;;	
 	
--g | --global)
-	yes_or_no() {
-		read -p "$1 ([y]es or [n]o): "
-		case $(echo $REPLY | tr '[A-Z]' '[a-z]') in
-			y|yes) echo "yes" ;;
-			*)     echo "no" ;;
+-g | --global)	
+	case ${2} in
+		start)
+			echo -e "$ansi_red **WARNING** USE AT YOUR OWN RISK! You want to ${2} global?(y/N) $ansi_std"
+			read choice	
+			if [ "${choice}" == "y" ]; then
+				touch a $CHECK/global.list		
+				sed -i 's/\$ignore_list/$global_list/' /opt/bin/ss-watchdog
+				echo -e -n "$ansi_white ${2} Global... "	
+				sleep 1
+				echo -e "            $ansi_green done. $ansi_std"				
+			else
+				: ${warning:?"You do not have any operations."}
+			fi
+		;;
+		
+		stop)
+			echo -e "$ansi_red **WARNING** USE AT YOUR OWN RISK! You want to ${2} global?(y/N) $ansi_std"
+			read choice	
+			if [ "${choice}" == "y" ]; then
+				touch a $CHECK/global.list		
+				sed -i 's/\$global_list/$ignore_list/' /opt/bin/ss-watchdog
+				echo -e -n "$ansi_white ${2} Global... "	
+				sleep 1
+				echo -e "            $ansi_green done. $ansi_std"		
+			else
+				: ${warning:?"You do not have any operations."}
+			fi
+		;;		
 		esac
-	}
-
-	echo -e "$ansi_white Do you want to use global proxy?(y/N)$ansi_std"
-	if [ "yes" == $(yes_or_no) ]; then
-		if [ ! -f "$CHECK/global.list" ]; then
-			GLOBAL_LIST=$CHECK/global.list
-			cat > $GLOBAL_LIST <<-EOF
-			0.0.0.0/8
-			10.0.0.0/8
-			100.64.0.0/10
-			127.0.0.0/8
-			169.254.0.0/16
-			172.16.0.0/12
-			192.0.0.0/24
-			192.0.2.0/24
-			192.88.99.0/24
-			192.168.0.0/16
-			198.18.0.0/15
-			198.51.100.0/24
-			203.0.113.0/24
-			224.0.0.0/4
-			240.0.0.0/4
-			255.255.255.255
-			EOF
-		fi		
-		sed -i 's/\$ignore_list/$global_list/' /opt/bin/ss-watchdog
-
-		echo -e -n "$ansi_white Global... "	
-		sleep 1
-		echo -e "            $ansi_green done. $ansi_std"
-	else
-		sed -i 's/\$global_list/$ignore_list/' /opt/bin/ss-watchdog
-
-		echo -e -n "$ansi_white Shutting down Global... "	
-		sleep 1
-		echo -e "            $ansi_green done. $ansi_std"
-	fi
-
+		
 	$PREFIX/shadowsocks/shadowsocks -f
-	$PREFIX/shadowsocks/shadowsocks -r			
+	$PREFIX/shadowsocks/shadowsocks -r		
 	;;
          
 -f | --flush)
