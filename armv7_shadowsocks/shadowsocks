@@ -855,11 +855,41 @@ uptest= none;
 -r | --rules)
 	sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json  > $PREFIX/opt/var/log/server.txt
 	/opt/etc/init.d/S99ss-rules start
-	adm_put=$PREFIX/shadowsocks/adm_ignore.list
-	if [ "$adm_filter" == "1" ]; then
-		if [ ! -f $adm_put ]; then
-			adm_put=$PREFIX/shadowsocks/adm_ignore.list
-			cat > $adm_put <<-EOF
+	echo -e -n "$ansi_white Loading iptables rules... "
+	sleep 1
+	echo -e "            $ansi_green done. $ansi_std"
+	;;
+
+-ad | --adm)
+	ipset_f() {
+		iptables-save -c | grep -v "ADM_" | \
+		iptables-restore -c 2>/dev/null
+		ipset -X adm_lan_ac 2>/dev/null
+		ipset -X adm_wan_ac 2>/dev/null		
+	}
+
+	ipset_r() {
+		ipset_f
+		ipset -! -R <<-EOF || return 1
+			create adm_wan_ac hash:net
+			$(adm_iplist | sed -e "s/^/add adm_wan_ac /")
+	EOF
+		$IPT -N ADM_AC
+		$IPT -A ADM_AC -m set --match-set adm_wan_ac dst -j RETURN
+	}
+
+	fw_rules() {			
+		ipset -N adm_lan_ac hash:net && \
+		$IPT -N ADM_FW && \
+		$IPT -A ADM_AC -j ADM_FW && \
+		$IPT -A ADM_FW -p tcp --dport 80 \
+			-j REDIRECT --to-ports 8118 && \
+		$IPT -A PREROUTING -p tcp --dport 80 \
+			-m set ! --match-set adm_lan_ac src -j ADM_AC	
+	}
+
+	adm_iplist() {
+		cat <<-EOF | grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}"
 			0.0.0.0/8
 			10.0.0.0/8
 			100.64.0.0/10
@@ -876,25 +906,12 @@ uptest= none;
 			224.0.0.0/4
 			240.0.0.0/4
 			255.255.255.255
-			EOF
-		fi
+	EOF
+	}
 
-		sleep 5		
-		$IPT -N ADM_AC
-		$IPT -N ADM_FW
-		sed -e "s/^/-A adm_wan_ac &/g" -e "1 i\-N adm_wan_ac hash:net hashsize 65536" $adm_put | ipset -R -!
-		ipset -N adm_lan_ac hash:net hashsize 65536
-		$IPT -A ADM_AC -m set --match-set adm_wan_ac dst -j RETURN
-		$IPT -A ADM_AC -j ADM_FW
-		$IPT -A ADM_FW -p tcp --dport 80 -j REDIRECT --to-ports 18309
-		$IPT -A PREROUTING -p tcp --dport 80 -m set ! --match-set adm_lan_ac src -j ADM_AC
-		ipset -A ss_spec_wan_ac 188.188.188.188/32	
-	fi	
-	echo -e -n "$ansi_white Loading iptables rules... "
-	sleep 1
-	echo -e "            $ansi_green done. $ansi_std"
-	;;
-
+	ipset_r && fw_rules
+	;;	
+	
 -g | --global)
 	yes_or_no() {
 		read -p "$1 ([y]es or [n]o): "
@@ -1457,8 +1474,8 @@ uptest= none;
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.5.29 $ansi_std"
-	echo -e "$ansi_green # Version: V6.2-stable (ARM version) $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.6.11 $ansi_std"
+	echo -e "$ansi_green # Version: V6.3-beta (ARM version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
 	echo -e "$ansi_green # configuration script in Tomato under$ansi_std. "
@@ -1471,6 +1488,7 @@ uptest= none;
 	echo -e "$ansi_white   [-m/--modules] Loading module $ansi_std"
 	echo -e "$ansi_white   [-S/--START] Running ShadowSocks and ChinaDNS $ansi_std"
 	echo -e "$ansi_white   [-r/--rules] Application Firewall Policy $ansi_std"
+	echo -e "$ansi_white   [-ad/--adm] Ad Filter $ansi_std"	
 	echo -e "$ansi_white   [-g/--global] Global Proxy $ansi_std"
 	echo -e "$ansi_white   [-f/--flush] Clear firewall policy $ansi_std"
 	echo -e "$ansi_white   [-u/--update] Update chnroutes Routing Host $ansi_std"

@@ -161,6 +161,7 @@ gen_iplist() {
 		203.0.113.0/24
 		224.0.0.0/4
 		240.0.0.0/4
+		188.188.188.188/32
 		255.255.255.255
 		$server
 		$SERVER
@@ -225,6 +226,9 @@ fi
 
 if [ -n "$IGNORE_LIST" ]; then
 	flush_r && fw_rule && ipset_r && ac_rule && tp_rule
+	if [ -f "/var/log/admflt.lock" ]; then
+		sleep 3 && /opt/bin/shadowsocks -ad
+	fi
 	[ "$?" = 0 ] && loger 6 "Load chnroutes successful" || loger 3 "Start failed!"
 	exit $?
 else
