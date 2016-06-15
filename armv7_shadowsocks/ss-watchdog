@@ -15,6 +15,7 @@ if [ ! -d "/opt/etc/shadowsocks" ]; then
 	mkdir -p /opt/etc/shadowsocks/LAN_AC_IN && \
 	mkdir -p /opt/etc/shadowsocks/LAN_AC_OUT
 fi
+[ ! -d "/opt/etc/adm" ] && mkdir -p /opt/etc/adm
 
 server_ip=`sed -n 's/.*ver": *"\(.*\)".*/\1/p' /opt/etc/shadowsocks.json`
 local_port=`sed -n 's/.*l_port": *\(.*\)/\1/p' /opt/etc/shadowsocks.json | sed 's/,//g'`
@@ -24,6 +25,7 @@ wan_ac_list_bp=/opt/etc/shadowsocks/WAN_AC_BP/wan_bp.list
 wan_ac_list_fw=/opt/etc/shadowsocks/WAN_AC_FW/wan_fw.list
 lan_ac_list_in=/opt/etc/shadowsocks/LAN_AC_IN/lan_ac.list
 lan_ac_list_out=/opt/etc/shadowsocks/LAN_AC_OUT/lan_ac.list
+adm_lan_list_bp=/opt/etc/adm/lan_bp.list
 
 [ ! -f "$wan_ac_list_in" -o ! -f "$wan_ac_list_out" ] && \
 touch a $wan_ac_list_bp \
@@ -47,3 +49,10 @@ $START -s $server_ip -l $local_port -i $ignore_list -o -e "-m multiport --dports
 	-b "$WAN_AC_BP" \
 	-w "$WAN_AC_FW" \
 	-u
+
+adm_start() {
+	[ -f "/var/log/admflt.lock" ] && shadowsocks -ad -l $adm_lan_list_bp
+}
+
+adm_start
+	
