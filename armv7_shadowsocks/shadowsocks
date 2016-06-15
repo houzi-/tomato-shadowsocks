@@ -860,45 +860,48 @@ uptest= none;
 	;;
 
 -ad | --adm)
+	usage() {
+		cat <<-EOF
+                  Usage: adbyby [options]
+
+                  Valid options are:
+                     -l <lan_ip_list>         network control device filters
+                     -c <clear_lan_ip>        clean up ip
+                     -f                       flush rules of adbyby
+	EOF
+		exit $1
+	}
+
 	ipset_f() {
 		iptables-save -c | grep -v "ADM_" | \
 		iptables-restore -c 2>/dev/null
 		ipset -X adm_lan_ac 2>/dev/null
-		ipset -X adm_wan_ac 2>/dev/null		
-	}
+		ipset -X adm_wan_ac 2>/dev/null
+		return 0
+	}	
 
-	case ${2} in
-		stop)
-			echo -e "$ansi_red **WARNING** USE AT YOUR OWN RISK! You want to ${2} adm?(y/N) $ansi_std"
-			read choice	
-			if [ "${choice}" == "y" ]; then
-				/opt/etc/init.d/S30adm ${2}
-				ipset_f
-				exit 0
-			else
-				: ${warning:?"You do not have any operations."}
-			fi
-		;;
-		esac	
-	
 	ipset_r() {
-		ipset_f
 		ipset -! -R <<-EOF || return 1
 			create adm_wan_ac hash:net
 			$(adm_iplist | sed -e "s/^/add adm_wan_ac /")
 	EOF
 		$IPT -N ADM_AC
 		$IPT -A ADM_AC -m set --match-set adm_wan_ac dst -j RETURN
+		return $?		
 	}
 
-	fw_rules() {			
-		ipset -N adm_lan_ac hash:net && \
+	fw_rules() {
+		ipset -! -R <<-EOF || return 1
+			create adm_lan_ac hash:net
+			$(sed -e "s/^/add adm_lan_ac /" ${LAN_CONTROL:=/dev/null} 2>/dev/null)
+	EOF
 		$IPT -N ADM_FW && \
 		$IPT -A ADM_AC -j ADM_FW && \
 		$IPT -A ADM_FW -p tcp --dport 80 \
-			-j REDIRECT --to-ports 8118 && \
+			-j REDIRECT --to-ports 18309 && \
 		$IPT -A PREROUTING -p tcp --dport 80 \
-			-m set ! --match-set adm_lan_ac src -j ADM_AC	
+			-m set ! --match-set adm_lan_ac src -j ADM_AC
+		return $?			
 	}
 
 	adm_iplist() {
@@ -922,7 +925,36 @@ uptest= none;
 	EOF
 	}
 
-	ipset_r && fw_rules
+	start_adm() {
+		[ ! "`ps | grep "adm" | grep -v "grep" | wc -l`" -gt 3 ] && {
+			/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
+		}
+		return $?
+	}	
+	
+	while getopts ":l:cf" arg; do
+		case "$arg" in
+			l)
+				LAN_CONTROL=$OPTARG
+				;;
+			c)
+				ipset -F adm_lan_ac
+				exit 0				
+				;;
+			f)
+				ipset_f && /opt/etc/init.d/S30adm stop
+				exit 0
+				;;
+		esac
+	done	
+	
+	if [ -z "$LAN_CONTROL" ]; then
+		usage 2
+	fi	
+	
+	ipset_f && ipset_r && fw_rules && start_adm
+	[ "$?" = 0 ] || logger "adm failed!"
+	exit $?
 	;;	
 	
 -g | --global)	
@@ -1471,7 +1503,7 @@ uptest= none;
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.6.11 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.6.15 $ansi_std"
 	echo -e "$ansi_green # Version: V6.3-beta (ARM version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
