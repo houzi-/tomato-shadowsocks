@@ -418,7 +418,7 @@ uptest= none;
 		\necho \"\" > /var/log/iptables_rules.log" \
 		> $CHECK/cron.5mins/clear_log.sh
 		sed -i 's/[\t]*//g' $CHECK/cron.5mins/clear_log.sh
-		echo -e "shadowsocks -c\nshadowsocks -cr" > $CHECK/cron.1min/check.sh				
+		echo -e "shadowsocks -c" > $CHECK/cron.1min/check.sh				
 
 		shadowsocks temp
 
@@ -527,7 +527,7 @@ uptest= none;
 		\necho \"\" > /var/log/iptables_rules.log" \
 		> $CHECK/cron.5mins/clear_log.sh
 		sed -i 's/[\t]*//g' $CHECK/cron.5mins/clear_log.sh
-		echo -e "shadowsocks -c\nshadowsocks -cr" > $CHECK/cron.1min/check.sh		
+		echo -e "shadowsocks -c" > $CHECK/cron.1min/check.sh		
 
 		shadowsocks temp		
 		
@@ -613,7 +613,7 @@ uptest= none;
 		\necho \"\" > /var/log/iptables_rules.log" \
 		> $CHECK/cron.5mins/clear_log.sh
 		sed -i 's/[\t]*//g' $CHECK/cron.5mins/clear_log.sh			
-		echo -e "shadowsocks -c\nshadowsocks -cr" > $CHECK/cron.1min/check.sh	
+		echo -e "shadowsocks -c" > $CHECK/cron.1min/check.sh	
 
 		shadowsocks temp		
 		
@@ -694,7 +694,7 @@ uptest= none;
 		\necho \"\" > /var/log/iptables_rules.log" \
 		> $CHECK/cron.5mins/clear_log.sh
 		sed -i 's/[\t]*//g' $CHECK/cron.5mins/clear_log.sh			
-		echo -e "shadowsocks -c\nshadowsocks -cr" > $CHECK/cron.1min/check.sh			
+		echo -e "shadowsocks -c" > $CHECK/cron.1min/check.sh			
 
 		shadowsocks temp
 		
@@ -780,7 +780,7 @@ uptest= none;
 		\necho \"\" > /var/log/iptables_rules.log" \
 		> $CHECK/cron.5mins/clear_log.sh
 		sed -i 's/[\t]*//g' $CHECK/cron.5mins/clear_log.sh	
-		echo -e "shadowsocks -c\nshadowsocks -cr" > $CHECK/cron.1min/check.sh			
+		echo -e "shadowsocks -c" > $CHECK/cron.1min/check.sh			
 
 		shadowsocks temp
 		
@@ -1123,6 +1123,24 @@ uptest= none;
 		fi
 	fi		
 
+	if [ -f "$CHECK/ignore.list" ]; then
+		if [ "`iptables -t nat -nvL | grep "SS_SPEC_WAN_AC" | wc -l`" -eq 3 ]; then
+			logger [check_rules] NO Problem
+		else
+			logger [check_rules] Loading Rules
+			$PREFIX/shadowsocks/shadowsocks -f
+			$PREFIX/shadowsocks/shadowsocks -r			
+		fi
+	else
+		if [ "`iptables -t nat -nvL | grep "gfw_black_list" | wc -l`" -eq 2 ]; then
+			logger [check_rules] NO Problem
+		else
+			logger [check_rules] Loading Rules
+			$PREFIX/shadowsocks/shadowsocks -f
+			$PREFIX/shadowsocks/shadowsocks -r
+		fi
+	fi	
+
 	if [ -f "/var/log/admflt.lock" ]; then
 		if [ $(ps|grep adm|grep -v grep|wc -l) -gt 1 ]; then
 			echo '['$DATE'] No problem, the normal operation of admflt.' >> /var/log/admflt.log 2>&1
@@ -1176,26 +1194,6 @@ uptest= none;
 			fi
 		fi
 	fi		
-	;;
-
--cr | --check_rules)
-	if [ -f "$CHECK/ignore.list" ]; then
-		if [ "`iptables -t nat -nvL | grep "SS_SPEC_WAN_AC" | wc -l`" -eq 3 ]; then
-			logger [check_rules] NO Problem
-		else
-			logger [check_rules] Loading Rules
-			$PREFIX/shadowsocks/shadowsocks -f
-			$PREFIX/shadowsocks/shadowsocks -r			
-		fi
-	else
-		if [ "`iptables -t nat -nvL | grep "gfw_black_list" | wc -l`" -eq 2 ]; then
-			logger [check_rules] NO Problem
-		else
-			logger [check_rules] Loading Rules
-			$PREFIX/shadowsocks/shadowsocks -f
-			$PREFIX/shadowsocks/shadowsocks -r
-		fi
-	fi
 	;;
 	
 -sw | --ss_switch)
@@ -1503,7 +1501,7 @@ uptest= none;
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.6.15 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.6.16 $ansi_std"
 	echo -e "$ansi_green # Version: V6.3-beta (ARM version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
@@ -1523,7 +1521,6 @@ uptest= none;
 	echo -e "$ansi_white   [-u/--update] Update chnroutes Routing Host $ansi_std"
 	echo -e "$ansi_white   [-ug/--update_gfwlist] Update GFWLIST domain $ansi_std"
 	echo -e "$ansi_white   [-c/--check] Guardian ss-redir* $ansi_std"
-	echo -e "$ansi_white   [-cr/--check_rules] Guardian iptables rules $ansi_std"
 	echo -e "$ansi_white   [-sw/--ss_switch] Account switching $ansi_std"
 	echo -e "$ansi_white   [-lc/--lan_control] LAN Device control $ansi_std"
 	echo -e "$ansi_white   [-sa/--services_action] Change all state services $ansi_std"
