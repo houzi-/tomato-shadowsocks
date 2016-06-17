@@ -217,9 +217,11 @@ fi
 if [ -n "$IGNORE_LIST" ]; then
 	flush_r && fw_rule && ipset_r && ac_rule && tp_rule
 	[ "$?" = 0 ] && loger 6 "Load chnroutes successful" || loger 3 "Start failed!"
+	touch a /var/log/chnroutes.lock	
 	exit $?
 else
 	flush_r && gfw_r
 	[ "$?" = 0 ] && loger 6 "Load gfwlist successful" || loger 3 "Start failed!"
+	touch a /var/log/gfwlist.lock	
 	exit $?
 fi

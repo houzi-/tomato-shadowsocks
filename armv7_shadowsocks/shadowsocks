@@ -926,7 +926,7 @@ uptest= none;
 	}
 
 	start_adm() {
-		[ ! "`ps | grep "adm" | grep -v "grep" | wc -l`" -gt 3 ] && {
+		[ ! -f "/var/log/admflt.lock" ] && {
 			/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
 		}
 		return $?
@@ -943,6 +943,7 @@ uptest= none;
 				;;
 			f)
 				ipset_f && /opt/etc/init.d/S30adm stop
+				rm -rf /var/log/admflt.lock
 				exit 0
 				;;
 		esac
@@ -1501,7 +1502,7 @@ uptest= none;
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.6.16 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.6.17 $ansi_std"
 	echo -e "$ansi_green # Version: V6.3-beta (ARM version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
