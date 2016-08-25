@@ -1340,7 +1340,8 @@ uptest= none;
 			if [ "${choice}" == "y" ]; then
 				/opt/etc/init.d/rc.unslung ${2}
 				if [ "${2}" == "stop" ]; then
-					cp $CHECK/dnsmasq.conf $CHECK/dnsmasq.conf.bak
+					[ -f "$CHECK/dnsmasq.conf.bak" ] && \
+						cp $CHECK/dnsmasq.conf $CHECK/dnsmasq.conf.bak
 					cp /tmp/etc/dnsmasq.conf $CHECK/dnsmasq.conf
 					$PREFIX/shadowsocks/shadowsocks -f
 					service dnsmasq restart
@@ -1502,7 +1503,7 @@ uptest= none;
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.6.17 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.8.25 $ansi_std"
 	echo -e "$ansi_green # Version: V6.3-beta (ARM version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
