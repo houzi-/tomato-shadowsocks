@@ -1340,7 +1340,7 @@ uptest= none;
 			if [ "${choice}" == "y" ]; then
 				/opt/etc/init.d/rc.unslung ${2}
 				if [ "${2}" == "stop" ]; then
-					[ -f "$CHECK/dnsmasq.conf.bak" ] && \
+					[ ! -f "$CHECK/dnsmasq.conf.bak" ] && \
 						cp $CHECK/dnsmasq.conf $CHECK/dnsmasq.conf.bak
 					cp /tmp/etc/dnsmasq.conf $CHECK/dnsmasq.conf
 					$PREFIX/shadowsocks/shadowsocks -f
