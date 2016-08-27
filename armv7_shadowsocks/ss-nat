@@ -12,7 +12,6 @@
 
 TAG="SS_SPEC"          # iptables tag
 IPT="iptables -t nat"  # alias of iptables
-ADM="ADM_"             # iptables ADM tag
 
 usage() {
 	cat <<-EOF
@@ -23,10 +22,12 @@ usage() {
 		    -s <server_ip>          ip address of shadowsocks remote server
 		    -l <local_port>         port number of shadowsocks local server
 		    -i <ip_list_file>       a file content is bypassed ip list
-		    -a <lan_ips>            lan ip of access control, need a prefix to
-		                            define access control mode
 		    -b <wan_ips>            wan ip of will be bypassed
 		    -w <wan_ips>            wan ip of will be forwarded
+		    -I <interface>          proxy only for the given interface
+		    -d <target>             the default target of lan access control
+		    -a <hosts_action>       lan ip of access control, need a prefix to
+		                            define access control mode			
 		    -e <extra_options>      extra options for iptables
 		    -o                      apply the rules to the OUTPUT chain
 		    -u                      enable udprelay mode, TPROXY is required
@@ -50,8 +51,6 @@ flush_r() {
 	ip route del local 0.0.0.0/0 dev lo table 100 2>/dev/null
 	ipset -X ss_spec_lan_ac 2>/dev/null
 	ipset -X ss_spec_wan_ac 2>/dev/null
-	ipset -X adm_lan_ac 2>/dev/null
-	ipset -X adm_wan_ac 2>/dev/null
 	ipset -X gfw_black_list 2>/dev/null
 	return 0
 }
@@ -59,61 +58,54 @@ flush_r() {
 gfw_r() {
 	if [ "$GFWLIST" = 1 ]; then
 		ipset -N gfw_black_list hash:ip hashsize 65536
+		local JSON="/opt/etc/shadowsocks.json"
+		local PORT=`sed -n 's/.*l_port": \(.*\)/\1/p' $JSON | sed 's/,//g'`
 		$IPT -A PREROUTING -p tcp -m set --match-set gfw_black_list dst \
-			-j REDIRECT --to-port `sed -n 's/.*l_port":\(.*\)/\1/p' /opt/etc/shadowsocks.json | sed 's/,//g'`
+			-j REDIRECT --to-port $PORT
 		$IPT -A OUTPUT -p tcp -m set --match-set gfw_black_list dst \
-			-j REDIRECT --to-port `sed -n 's/.*l_port":\(.*\)/\1/p' /opt/etc/shadowsocks.json | sed 's/,//g'`
+			-j REDIRECT --to-port $PORT
+		touch a /var/log/gfwlist.lock
 	fi
 	return $?	
 }
 	
 ipset_r() {
-	ipset -! -R <<-EOF || return 1
-		create ss_spec_wan_ac hash:net hashsize 65536
-		$(gen_iplist | sed -e "s/^/add ss_spec_wan_ac /")
-		$(sed -e "s/^/add ss_spec_wan_ac /" ${IGNORE_LIST:=/dev/null} 2>/dev/null)
-		$(for ip in $WAN_FW_IP; do echo "add ss_spec_wan_ac $ip nomatch"; done)
+	ipset -! restore <<-EOF || return 1
+		create ss_spec_lan_no hash:net hashsize 64
+		create ss_spec_lan_bp hash:net hashsize 64
+		create ss_spec_lan_fw hash:net hashsize 64
+		create ss_spec_wan_sp hash:net hashsize 64
+		create ss_spec_wan_bp hash:net hashsize 64
+		create ss_spec_wan_fw hash:net hashsize 64
+		$(gen_iplist | sed -e "s/^/add ss_spec_wan_sp /")
+		$(sed -e "s/^/add ss_spec_wan_bp /" ${IGNORED:=/dev/null} 2>/dev/null)
+		$(for ip in $WAN_BP_IP; do echo "add ss_spec_wan_bp $ip"; done)
+		$(for ip in $WAN_FW_IP; do echo "add ss_spec_wan_fw $ip"; done)
 EOF
-	$IPT -N SS_SPEC_WAN_AC && \
-	$IPT -A SS_SPEC_WAN_AC -m set --match-set ss_spec_wan_ac dst -j RETURN && \
-	$IPT -A SS_SPEC_WAN_AC -j SS_SPEC_WAN_FW
-	return $?
-}
-
-fw_rule() {
-	$IPT -N SS_SPEC_WAN_FW && \
-	$IPT -A SS_SPEC_WAN_FW -p tcp \
-		-j REDIRECT --to-ports $local_port 2>/dev/null || {
-		loger 3 "Can't redirect, please check the iptables."
-		exit 1
-	}
-#	$IPT -I PREROUTING -p udp --dport 53 \
-#		-j REDIRECT --to-ports 5353
-	return $?
+	return 0
 }
 
 ac_rule() {
-	if [ -n "$LAN_AC_IP" ]; then
-		case "${LAN_AC_IP:0:1}" in
-			w|W)
-				MATCH_SET="-m set --match-set ss_spec_lan_ac src"
+	for action in $LAN_HOSTS_ACTION; do
+		case "${action:0:1}" in
+			n|N)
+				ipset add ss_spec_lan_no ${action:2}
 				;;
 			b|B)
-				MATCH_SET="-m set ! --match-set ss_spec_lan_ac src"
+				ipset add ss_spec_lan_bp ${action:2}
 				;;
-			*)
-				loger 3 "Illegal argument \`-a $LAN_AC_IP\`."
-				return 2
+			g|G)
+				ipset add ss_spec_lan_fw ${action:2}
 				;;
 		esac
-	fi
-	IFNAME=$(nvram get lan_ifname 2>/dev/null)
-	ipset -! -R <<-EOF || return 1
-		create ss_spec_lan_ac hash:net hashsize 65536
-		$(for ip in ${LAN_AC_IP:1}; do echo "add ss_spec_lan_ac $ip"; done)
-EOF
-	$IPT -I PREROUTING 1 ${IFNAME:+-i $IFNAME} -p tcp $EXT_ARGS $MATCH_SET \
-		-j SS_SPEC_WAN_AC
+	done
+	include_ac_rules nat
+	include_prerouting_rules nat
+	$IPT -A SS_SPEC_WAN_FW -p tcp \
+		-j REDIRECT --to-ports $local_port 2>/dev/null || {
+		loger 3 "Can't redirect, please check the iptables."
+		return 1
+	}
 	if [ "$OUTPUT" = 1 ]; then
 		$IPT -I OUTPUT 1 -p tcp $EXT_ARGS -j SS_SPEC_WAN_AC
 	fi
@@ -126,12 +118,49 @@ tp_rule() {
 	ip rule add fwmark 0x01/0x01 table 100
 	ip route add local 0.0.0.0/0 dev lo table 100
 	local ipt="iptables -t mangle"
-	$ipt -N SS_SPEC_TPROXY
-	$ipt -A SS_SPEC_TPROXY -p udp -m set ! --match-set ss_spec_wan_ac dst \
-		-j TPROXY --on-port "$LOCAL_PORT" --tproxy-mark 0x01/0x01
-	$ipt -I PREROUTING 1 ${IFNAME:+-i $IFNAME} -p udp $EXT_ARGS $MATCH_SET \
-		-j SS_SPEC_TPROXY
+	include_ac_rules mangle
+	include_prerouting_rules mangle
+	$ipt -A SS_SPEC_WAN_FW -p udp -j TPROXY --on-port "$LOCAL_PORT" \
+		--tproxy-mark 0x01/0x01
 	return $?
+}
+
+include_ac_rules() {
+	iptables-restore -n <<-EOF
+	*$1
+	:SS_SPEC_WAN_FW - [0:0]
+	:SS_SPEC_WAN_AC - [0:0]
+	:SS_SPEC_LAN_AC - [0:0]
+	-A SS_SPEC_WAN_FW -m set --match-set ss_spec_wan_sp dst -j RETURN
+	-A SS_SPEC_WAN_AC -m set --match-set ss_spec_wan_fw dst -j SS_SPEC_WAN_FW
+	-A SS_SPEC_WAN_AC -m set --match-set ss_spec_wan_bp dst -j RETURN
+	-A SS_SPEC_WAN_AC -j SS_SPEC_WAN_FW
+	-A SS_SPEC_LAN_AC -m set --match-set ss_spec_lan_bp src -j RETURN
+	-A SS_SPEC_LAN_AC -m set --match-set ss_spec_lan_fw src -j SS_SPEC_WAN_FW
+	-A SS_SPEC_LAN_AC -m set --match-set ss_spec_lan_no src -j SS_SPEC_WAN_AC
+	-A SS_SPEC_LAN_AC -j ${LAN_DEFAULT_TARGET:=SS_SPEC_WAN_AC}
+	COMMIT
+EOF
+}
+
+gen_prerouting_rules() {
+	local protocol=$([ "$1" = "mangle" ] && echo udp || echo tcp)
+	for ifname in $IFNAMES; do
+		[ -z "$ifname" ] && continue
+		local empty=no
+		echo -I PREROUTING 1 -i $ifname -p $protocol $EXT_ARGS -j SS_SPEC_LAN_AC
+	done
+	if [ -z "$empty" ]; then
+		echo -I PREROUTING 1 -p $protocol $EXT_ARGS -j SS_SPEC_LAN_AC
+	fi
+}
+
+include_prerouting_rules() {
+	iptables-restore -n <<-EOF
+	*$1
+	$(gen_prerouting_rules $1)
+	COMMIT
+EOF
 }
 
 gen_iplist() {
@@ -151,15 +180,12 @@ gen_iplist() {
 		203.0.113.0/24
 		224.0.0.0/4
 		240.0.0.0/4
-		188.188.188.188/32
 		255.255.255.255
 		$server
-		$SERVER
-		$WAN_BP_IP
 EOF
 }
 
-while getopts ":s:l:i:e:a:b:w:ouGfh" arg; do
+while getopts ":s:l:i:b:w:I:d:a:e:ouGfh" arg; do
 	case "$arg" in
 		s)
 			server=$OPTARG
@@ -168,20 +194,26 @@ while getopts ":s:l:i:e:a:b:w:ouGfh" arg; do
 			local_port=$OPTARG
 			;;
 		i)
-			IGNORE_LIST=$OPTARG
-			;;
-		e)
-			EXT_ARGS=$OPTARG
-			;;
-		a)
-			LAN_AC_IP=$OPTARG
+			IGNORED=$OPTARG
 			;;
 		b)
-			WAN_BP_IP=$(for ip in $OPTARG; do echo $ip; done)
+			WAN_BP_IP=$OPTARG
 			;;
 		w)
 			WAN_FW_IP=$OPTARG
 			;;
+		I)
+			IFNAMES=$OPTARG
+			;;
+		d)
+			LAN_DEFAULT_TARGET=$OPTARG
+			;;
+		a)
+			LAN_HOSTS_ACTION=$OPTARG
+			;;
+		e)
+			EXT_ARGS=$OPTARG
+			;;	
 		o)
 			OUTPUT=1
 			;;
@@ -214,14 +246,16 @@ if [ "$TPROXY" = 1 ]; then
 	LOCAL_PORT=$local_port
 fi
 
-if [ -n "$IGNORE_LIST" ]; then
-	flush_r && fw_rule && ipset_r && ac_rule && tp_rule
-	[ "$?" = 0 ] && loger 6 "Load chnroutes successful" || loger 3 "Start failed!"
-	touch a /var/log/chnroutes.lock	
-	exit $?
-else
+if [ "$GFWLIST" = 1 ]; then
 	flush_r && gfw_r
+	RET=$?	
 	[ "$?" = 0 ] && loger 6 "Load gfwlist successful" || loger 3 "Start failed!"
-	touch a /var/log/gfwlist.lock	
-	exit $?
+	touch /var/log/gfwlist.lock
+	exit $RET
+else
+	flush_r && ipset_r && ac_rule && tp_rule
+	RET=$?
+	[ "$?" = 0 ] && loger 6 "Load chnroutes successful" || loger 3 "Start failed!"
+	touch /var/log/chnroutes.lock
+	exit $RET
 fi
