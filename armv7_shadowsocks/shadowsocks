@@ -1308,30 +1308,6 @@ uptest= none;
 	service dnsmasq restart && [ -f "/var/log/dnscrypt-proxy.lock" ] && /opt/etc/init.d/S29dnscrypt-proxy start
 	;;
 
--lc | --lan_control)
-	echo -e "$ansi_white Allow list to proxy?(y/N)$ansi_std"
-	read choice
-	if [ "${choice}" == "y" ]; then
-		if [ -s /opt/etc/shadowsocks/LAN_AC_IN/lan_ac.list ]; then		
-			sed -i "s;B\$LAN_AC_OUT;W\$LAN_AC_IN;g" /opt/bin/ss-watchdog
-		fi
-		$PREFIX/shadowsocks/shadowsocks -f && \
-		$PREFIX/shadowsocks/shadowsocks -r
-		echo -e -n "$ansi_white List_in... "
-		sleep 1
-		echo -e "            $ansi_green done. $ansi_std"
-	else
-		if [ -s /opt/etc/shadowsocks/LAN_AC_OUT/lan_ac.list ]; then		
-			sed -i "s;W\$LAN_AC_IN;B\$LAN_AC_OUT;g" /opt/bin/ss-watchdog
-		fi
-		$PREFIX/shadowsocks/shadowsocks -f && \
-		$PREFIX/shadowsocks/shadowsocks -r
-		echo -e -n "$ansi_white List_out... "
-		sleep 1
-		echo -e "            $ansi_green done. $ansi_std"
-	fi
-	;;		
-
 -sa | --services_action)
 	case ${2} in
 		stop)
@@ -1479,7 +1455,6 @@ uptest= none;
 	echo -e "$ansi_white   [-ug/--update_gfwlist] Update GFWLIST domain $ansi_std"
 	echo -e "$ansi_white   [-c/--check] Guardian ss-redir* $ansi_std"
 	echo -e "$ansi_white   [-sw/--ss_switch] Account switching $ansi_std"
-	echo -e "$ansi_white   [-lc/--lan_control] LAN Device control $ansi_std"
 	echo -e "$ansi_white   [-sa/--services_action] Change all state services $ansi_std"
 	echo -e "$ansi_white   [-b/--backup] Backup entware $ansi_std"	
 	echo -e "$ansi_white   [-e/--email] Send shadowsocks running information $ansi_std"
