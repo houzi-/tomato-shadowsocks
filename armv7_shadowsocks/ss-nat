@@ -45,7 +45,7 @@ loger() {
 
 flush_r() {
 	iptables-save -c | grep -v "$TAG" | \
-	grep -v "$ADM" | grep -v "gfw_black_list" | \
+	grep -v "gfw_black_list" | \
 	iptables-restore -c 2>/dev/null
 	ip rule del fwmark 0x01/0x01 table 100 2>/dev/null
 	ip route del local 0.0.0.0/0 dev lo table 100 2>/dev/null
