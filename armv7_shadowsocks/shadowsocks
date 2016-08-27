@@ -849,44 +849,45 @@ uptest= none;
 	echo -e "            $ansi_green done. $ansi_std"
 	;;
 
--g | --global)	
+-g | --global)
 	case ${2} in
 		start)
 			echo -e "$ansi_red **WARNING** USE AT YOUR OWN RISK! You want to ${2} global?(y/N) $ansi_std"
-			read choice	
+			read choice
 			if [ "${choice}" == "y" ]; then
-				touch a $CHECK/global.list		
-				sed -i 's/\$ignore_list/$global_list/' /opt/bin/ss-watchdog
-				echo -e -n "$ansi_white ${2} Global... "	
+				touch $CHECK/global.list
+				sed -i 's/\SS_SPEC_WAN_AC/SS_SPEC_WAN_FW/' /opt/bin/ss-start
+				echo -e -n "$ansi_white ${2} Global... "
 				sleep 1
-				echo -e "            $ansi_green done. $ansi_std"				
+				echo -e "            $ansi_green done. $ansi_std"
+				$PREFIX/shadowsocks/shadowsocks -f
+				$PREFIX/shadowsocks/shadowsocks -r
 			else
 				: ${warning:?"You do not have any operations."}
 			fi
 		;;
-		
+
 		stop)
 			echo -e "$ansi_red **WARNING** USE AT YOUR OWN RISK! You want to ${2} global?(y/N) $ansi_std"
-			read choice	
+			read choice
 			if [ "${choice}" == "y" ]; then
-				touch a $CHECK/global.list		
-				sed -i 's/\$global_list/$ignore_list/' /opt/bin/ss-watchdog
-				echo -e -n "$ansi_white ${2} Global... "	
+				touch $CHECK/global.list
+				sed -i 's/\SS_SPEC_WAN_FW/SS_SPEC_WAN_AC/' /opt/bin/ss-start
+				echo -e -n "$ansi_white ${2} Global... "
 				sleep 1
-				echo -e "            $ansi_green done. $ansi_std"		
+				echo -e "            $ansi_green done. $ansi_std"
+				$PREFIX/shadowsocks/shadowsocks -f
+				$PREFIX/shadowsocks/shadowsocks -r
 			else
 				: ${warning:?"You do not have any operations."}
 			fi
-		;;		
+		;;
 		esac
-		
-	$PREFIX/shadowsocks/shadowsocks -f
-	$PREFIX/shadowsocks/shadowsocks -r		
 	;;
-         
+    
 -f | --flush)
 	echo -e -n "$ansi_white Flushing rules... "
-	/opt/bin/ss-rules -f		
+	/opt/bin/ss-nat -f		
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"
 	;;
