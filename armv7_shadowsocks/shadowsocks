@@ -333,7 +333,7 @@ Your Choice:"
 		echo > $dnsmasq
 		echo "min-cache-ttl=600" >> $dnsmasq
 		echo "cache-size=10000" >> $dnsmasq
-		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo -e "conf-dir=$CHECK/dnsmasq.d" >> $dnsmasq
 		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
 		echo "addn-hosts=/etc/dnsmasq/hosts" >> $dnsmasq
 		echo "dhcp-hostsfile=/etc/dnsmasq/dhcp" >> $dnsmasq
@@ -466,7 +466,7 @@ uptest= none;
 		sleep 1
 		echo > $dnsmasq			
 		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nmin-cache-ttl=600 \ncache-size=10000" >> $dnsmasq
-		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo -e "conf-dir=$CHECK/dnsmasq.d" >> $dnsmasq
 		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
 		echo "addn-hosts=/etc/dnsmasq/hosts" >> $dnsmasq
 		echo "dhcp-hostsfile=/etc/dnsmasq/dhcp" >> $dnsmasq
@@ -552,7 +552,7 @@ uptest= none;
 		sleep 1
 		echo > $dnsmasq		
 		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nproxy-dnssec \nmin-cache-ttl=6000 \ncache-size=10000" >> $dnsmasq
-		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo -e "conf-dir=$CHECK/dnsmasq.d" >> $dnsmasq
 		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
 		echo "addn-hosts=/etc/dnsmasq/hosts" >> $dnsmasq
 		echo "dhcp-hostsfile=/etc/dnsmasq/dhcp" >> $dnsmasq
@@ -630,7 +630,7 @@ uptest= none;
 		sleep 1
 		echo > $dnsmasq		
 		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nall-servers \nmin-cache-ttl=6000 \ncache-size=10000" >> $dnsmasq
-		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo -e "conf-dir=$CHECK/dnsmasq.d" >> $dnsmasq
 		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
 		echo "addn-hosts=/etc/dnsmasq/hosts" >> $dnsmasq
 		echo "dhcp-hostsfile=/etc/dnsmasq/dhcp" >> $dnsmasq
@@ -720,7 +720,7 @@ uptest= none;
 		sleep 1
 		echo > $dnsmasq		
 		echo -e "no-resolv \nno-poll \nserver=127.0.0.1#5353 \nmin-cache-ttl=6000 \ncache-size=10000" >> $dnsmasq
-		echo -e "conf-dir=$PREFIX/shadowsocks/dnsmasq.d" >> $dnsmasq
+		echo -e "conf-dir=$CHECK/dnsmasq.d" >> $dnsmasq
 		echo "resolv-file=/etc/resolv.dnsmasq" >> $dnsmasq
 		echo "addn-hosts=/etc/dnsmasq/hosts" >> $dnsmasq
 		echo "dhcp-hostsfile=/etc/dnsmasq/dhcp" >> $dnsmasq
