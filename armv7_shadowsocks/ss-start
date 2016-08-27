@@ -10,49 +10,49 @@
 #set -x
 
 if [ ! -d "/opt/etc/shadowsocks" ]; then
-	mkdir -p /opt/etc/shadowsocks/WAN_AC_BP && \
+	mkdir -p /opt/etc/shadowsocks/WAN_AC_SP && \
 	mkdir -p /opt/etc/shadowsocks/WAN_AC_FW && \
-	mkdir -p /opt/etc/shadowsocks/LAN_AC_IN && \
-	mkdir -p /opt/etc/shadowsocks/LAN_AC_OUT
+	mkdir -p /opt/etc/shadowsocks/WAN_AC_BP && \
+	mkdir -p /opt/etc/shadowsocks/LAN_AC_NO && \	
+	mkdir -p /opt/etc/shadowsocks/LAN_AC_FW && \
+	mkdir -p /opt/etc/shadowsocks/LAN_AC_BP
 fi
-[ ! -d "/opt/etc/adm" ] && mkdir -p /opt/etc/adm
 
 server_ip=`sed -n 's/.*ver": *"\(.*\)".*/\1/p' /opt/etc/shadowsocks.json`
 local_port=`sed -n 's/.*l_port": *\(.*\)/\1/p' /opt/etc/shadowsocks.json | sed 's/,//g'`
 ignore_list=/opt/etc/ignore.list
-global_list=/opt/etc/global.list
-wan_ac_list_bp=/opt/etc/shadowsocks/WAN_AC_BP/wan_bp.list
-wan_ac_list_fw=/opt/etc/shadowsocks/WAN_AC_FW/wan_fw.list
-lan_ac_list_in=/opt/etc/shadowsocks/LAN_AC_IN/lan_ac.list
-lan_ac_list_out=/opt/etc/shadowsocks/LAN_AC_OUT/lan_ac.list
-adm_lan_list_bp=/opt/etc/adm/lan_bp.list
+wan_ac_list_sp=/opt/etc/shadowsocks/WAN_AC_SP/wan_ac.list
+wan_ac_list_fw=/opt/etc/shadowsocks/WAN_AC_FW/wan_ac.list
+wan_ac_list_bp=/opt/etc/shadowsocks/WAN_AC_BP/wan_ac.list
+lan_ac_list_no=/opt/etc/shadowsocks/LAN_AC_NO/lan_ac.list
+lan_ac_list_fw=/opt/etc/shadowsocks/LAN_AC_FW/lan_ac.list
+lan_ac_list_bp=/opt/etc/shadowsocks/LAN_AC_BP/lan_ac.list
 
-[ ! -f "$wan_ac_list_in" -o ! -f "$wan_ac_list_out" ] && \
-touch a $wan_ac_list_bp \
-touch a $wan_ac_list_fw
+[ ! -f "$wan_ac_list_fw" -o ! -f "$wan_ac_list_bp" ] && \
+touch a $wan_ac_list_sp && \
+touch a $wan_ac_list_fw && \
+touch a $wan_ac_list_bp
 
 [ ! -f "$lan_ac_list_in" -o ! -f "$lan_ac_list_out" ] && \
-touch a $lan_ac_list_in \
-touch a $lan_ac_list_out
+touch a $lan_ac_list_no && \
+touch a $lan_ac_list_fw && \
+touch a $lan_ac_list_bp
 
-WAN_AC_BP=`sort -t'.' -nk1,1 -nk2,3 -nk3,3 -nk4,4 $wan_ac_list_bp | xargs`
+WAN_AC_NO=`sort -t'.' -nk1,1 -nk2,3 -nk3,3 -nk4,4 $wan_ac_list_sp | xargs`
 WAN_AC_FW=`sort -t'.' -nk1,1 -nk2,3 -nk3,3 -nk4,4 $wan_ac_list_fw | xargs`
-LAN_AC_IN=`sort -t'.' -nk1,1 -nk2,3 -nk3,3 -nk4,4 $lan_ac_list_in | xargs`
-LAN_AC_OUT=`sort -t'.' -nk1,1 -nk2,3 -nk3,3 -nk4,4 $lan_ac_list_out | xargs`
+WAN_AC_BP=`sort -t'.' -nk1,1 -nk2,3 -nk3,3 -nk4,4 $wan_ac_list_bp | xargs`
 
-PROCS=ss-rules
+LAN_AC_NO=`sort -t'.' -nk1,1 -nk2,3 -nk3,3 -nk4,4 $lan_ac_list_no | xargs`
+LAN_AC_FW=`sort -t'.' -nk1,1 -nk2,3 -nk3,3 -nk4,4 $lan_ac_list_fw | xargs`
+LAN_AC_BP=`sort -t'.' -nk1,1 -nk2,3 -nk3,3 -nk4,4 $lan_ac_list_bp | xargs`
+
+PROCS=ss-nat
 BIN=/opt/bin
 START=$BIN/$PROCS
+IFNAME=`nvram get lan_ifname`
 
 $START -s $server_ip -l $local_port -i $ignore_list -o -e "-m multiport --dports 22,80,443" \
-	-a "B$LAN_AC_OUT" \
-	-b "$WAN_AC_BP" \
-	-w "$WAN_AC_FW" \
+	-d SS_SPEC_WAN_AC \
+	-I $IFNAME \
 	-u
-
-adm_start() {
-	[ -f "/var/log/admflt.lock" ] && shadowsocks -ad -l $adm_lan_list_bp
-}
-
-adm_start
 	

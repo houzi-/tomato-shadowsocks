@@ -71,12 +71,12 @@ gfw_r() {
 	
 ipset_r() {
 	ipset -! restore <<-EOF || return 1
-		create ss_spec_lan_no hash:net hashsize 64
-		create ss_spec_lan_bp hash:net hashsize 64
-		create ss_spec_lan_fw hash:net hashsize 64
-		create ss_spec_wan_sp hash:net hashsize 64
-		create ss_spec_wan_bp hash:net hashsize 64
-		create ss_spec_wan_fw hash:net hashsize 64
+		create ss_spec_lan_no hash:net hashsize 65536
+		create ss_spec_lan_bp hash:net hashsize 65536
+		create ss_spec_lan_fw hash:net hashsize 65536
+		create ss_spec_wan_sp hash:net hashsize 65536
+		create ss_spec_wan_bp hash:net hashsize 65536
+		create ss_spec_wan_fw hash:net hashsize 65536
 		$(gen_iplist | sed -e "s/^/add ss_spec_wan_sp /")
 		$(sed -e "s/^/add ss_spec_wan_bp /" ${IGNORED:=/dev/null} 2>/dev/null)
 		$(for ip in $WAN_BP_IP; do echo "add ss_spec_wan_bp $ip"; done)
