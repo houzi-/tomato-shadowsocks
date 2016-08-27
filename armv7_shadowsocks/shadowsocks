@@ -60,7 +60,6 @@ ShadowSocks_Account="$ansi_white ShadowSocks_Account: "
 DNSMASQ="$ansi_white DNSMASQ: "
 ZONEINFO_ASIA="$ansi_white ZONEINFO_ASIA: "
 ss_switch="$ansi_white ss_switch: "
-update_scr="$ansi_white update_scr: "
 backup="$ansi_white backup: "
 
 # You can mount the partition path editing (EP:"/jffs" or "/tmp/mnt/sda1" )
@@ -895,7 +894,7 @@ uptest= none;
 -u | --update)
 	directory=$(cd $PREFIX/shadowsocks && ls | grep "dnsmasq.d" | grep -v "grep")
 	if [ -z "$directory" ]; then
-		cd $PREFIX/shadowsocks && mkdir dnsmasq.d
+		cd $CHECK && mkdir dnsmasq.d
 	fi
 
 	if [ -f "$CHECK/ignore.list" ]; then
@@ -959,9 +958,9 @@ uptest= none;
 		rm -f /tmp/Routing_IPv4.txt /tmp/Routing_IPv4_tmp.txt /tmp/Routing_IPv6.txt /tmp/Routing_IPv6_tmp.txt /tmp/Routing.txt
 	else
 		wget -t0 -O- $china_routing_list | awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > $CHECK/chnroute.txt
-		cd $PREFIX/shadowsocks/dnsmasq.d/;curl --insecure -O $china_domain_list;cd /
+		cd $CHECK/dnsmasq.d/;curl --insecure -O $china_domain_list;cd /
 		DNS=`cat /etc/resolv.dnsmasq | awk '/^nameserver/{print $2}' | sed -n '1p'`
-		sed -i "s|^\(server.*\)/[^/]*$|\1/$DNS|" $PREFIX/shadowsocks/dnsmasq.d/accelerated-domains.china.conf
+		sed -i "s|^\(server.*\)/[^/]*$|\1/$DNS|" $CHECK/dnsmasq.d/accelerated-domains.china.conf
 	fi
 	
 	if [ -f "$PREFIX/shadowsocks/update.lock" ]; then
@@ -991,15 +990,15 @@ uptest= none;
 	echo -e -n "$ansi_white Updating gfwlist... "
 	directory=$(cd $PREFIX/shadowsocks && ls | grep "dnsmasq.d" | grep -v "grep")
 	if [ -z "$directory" ]; then
-		cd $PREFIX/shadowsocks && mkdir dnsmasq.d
+		cd $CHECK && mkdir dnsmasq.d
 	fi
 		
 	DNS=127.0.0.1#1054
 		
-	wget -t0 -O $PREFIX/shadowsocks/dnsmasq.d/gfwlist.conf $gfw_block_list
+	wget -t0 -O $CHECK/dnsmasq.d/gfwlist.conf $gfw_block_list
 		
-	sed -i "s|^\(server.*\)/[^/]*$|\1/$DNS|" $PREFIX/shadowsocks/dnsmasq.d/gfwlist.conf
-	sed -i "s|^\(ipset.*\)/[^/]*$|\1/gfw_black_list|" $PREFIX/shadowsocks/dnsmasq.d/gfwlist.conf
+	sed -i "s|^\(server.*\)/[^/]*$|\1/$DNS|" $CHECK/dnsmasq.d/gfwlist.conf
+	sed -i "s|^\(ipset.*\)/[^/]*$|\1/gfw_black_list|" $CHECK/dnsmasq.d/gfwlist.conf
 	sleep 1
 	echo -e "            $ansi_green done. $ansi_std"
 	service dnsmasq restart
