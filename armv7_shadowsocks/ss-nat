@@ -12,6 +12,7 @@
 
 TAG="SS_SPEC"          # iptables tag
 IPT="iptables -t nat"  # alias of iptables
+IPSET="ss_spec"        # list of ipset
 
 usage() {
 	cat <<-EOF
@@ -49,8 +50,9 @@ flush_r() {
 	iptables-restore -c 2>/dev/null
 	ip rule del fwmark 0x01/0x01 table 100 2>/dev/null
 	ip route del local 0.0.0.0/0 dev lo table 100 2>/dev/null
-	ipset -X ss_spec_lan_ac 2>/dev/null
-	ipset -X ss_spec_wan_ac 2>/dev/null
+	for setname in $(ipset -n list | grep -i "$IPSET"); do
+		ipset destroy $setname 2>/dev/null
+	done
 	ipset -X gfw_black_list 2>/dev/null
 	return 0
 }
