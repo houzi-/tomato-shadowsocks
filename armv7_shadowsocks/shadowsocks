@@ -1016,7 +1016,7 @@ uptest= none;
 	fi		
 
 	if [ -f "$CHECK/ignore.list" ]; then
-		if [ "`iptables -t nat -nvL | grep "SS_SPEC_WAN_AC" | wc -l`" -eq 3 ]; then
+		if [ "`iptables -t nat -nvL | grep "SS_SPEC_WAN_AC" | wc -l`" -eq 4 ]; then
 			logger [check_rules] NO Problem
 		else
 			logger [check_rules] Loading Rules
@@ -1031,17 +1031,8 @@ uptest= none;
 			$PREFIX/shadowsocks/shadowsocks -f
 			$PREFIX/shadowsocks/shadowsocks -r
 		fi
-	fi	
+	fi
 
-	if [ -f "/var/log/admflt.lock" ]; then
-		if [ $(ps|grep adm|grep -v grep|wc -l) -gt 1 ]; then
-			echo '['$DATE'] No problem, the normal operation of admflt.' >> /var/log/admflt.log 2>&1
-		else
-			echo '['$DATE'] admflt abnormal operation, restarting admflt.' >> /var/log/admflt.log 2>&1
-			/opt/etc/init.d/S30adm start
-		fi
-	fi	
-	
 	dnscrypt=$(ps | grep "dnscrypt-proxy" | grep -v "grep")
 	if [ -f "/var/log/dnscrypt-proxy.lock" ]; then
 		if [ -z "$dnscrypt" ]; then
