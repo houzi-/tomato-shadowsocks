@@ -35,9 +35,6 @@ TO=""
 # XIAOMI Fan Mode
 xiaomi_fan=0
 
-# ADM ad filter
-adm_filter=0
-
 READ="\033[31;1m"
 BOLD="\033[42;1m"	
 NORM="\033[0m"
@@ -812,18 +809,11 @@ uptest= none;
 		$PREFIX/shadowsocks/shadowsocks -u
 	else
 		echo '['$DATE'] Has loaded China route table.' > /var/log/chnroutes.log
-	fi
-
-	if [ "$adm_filter" == "1" ]; then
-		if [ ! -f "/opt/var/log/admflt.lock" ]; then
-			sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S30adm (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
-		fi	
 	fi	
 	
 	PROCESS=$(ps | grep "ss-redir" | grep -v "grep")
 	if [ -z "$PROCESS" ]; then
 		mount -o bind /opt/sbin/dnsmasq /usr/sbin/dnsmasq && service dnsmasq restart
-#		/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
 		/opt/etc/init.d/S22shadowsocks start && touch /var/log/shadowsocks.lock
 #		/opt/etc/init.d/S23ss-tunnel start && touch /var/log/ss-tunnel.lock
 #		/opt/etc/init.d/S26pdnsd start && touch /var/log/pdnsd.lock
@@ -859,105 +849,6 @@ uptest= none;
 	echo -e "            $ansi_green done. $ansi_std"
 	;;
 
--ad | --adm)
-	usage() {
-		cat <<-EOF
-                  Usage: adbyby [options]
-
-                  Valid options are:
-                     -l <lan_ip_list>         network control device filters
-                     -c <clear_lan_ip>        clean up ip
-                     -f                       flush rules of adbyby
-	EOF
-		exit $1
-	}
-
-	ipset_f() {
-		iptables-save -c | grep -v "ADM_" | \
-		iptables-restore -c 2>/dev/null
-		ipset -X adm_lan_ac 2>/dev/null
-		ipset -X adm_wan_ac 2>/dev/null
-		return 0
-	}	
-
-	ipset_r() {
-		ipset -! -R <<-EOF || return 1
-			create adm_wan_ac hash:net
-			$(adm_iplist | sed -e "s/^/add adm_wan_ac /")
-	EOF
-		$IPT -N ADM_AC
-		$IPT -A ADM_AC -m set --match-set adm_wan_ac dst -j RETURN
-		return $?		
-	}
-
-	fw_rules() {
-		ipset -! -R <<-EOF || return 1
-			create adm_lan_ac hash:net
-			$(sed -e "s/^/add adm_lan_ac /" ${LAN_CONTROL:=/dev/null} 2>/dev/null)
-	EOF
-		$IPT -N ADM_FW && \
-		$IPT -A ADM_AC -j ADM_FW && \
-		$IPT -A ADM_FW -p tcp --dport 80 \
-			-j REDIRECT --to-ports 18309 && \
-		$IPT -A PREROUTING -p tcp --dport 80 \
-			-m set ! --match-set adm_lan_ac src -j ADM_AC
-		return $?			
-	}
-
-	adm_iplist() {
-		cat <<-EOF | grep -E "^([0-9]{1,3}\.){3}[0-9]{1,3}"
-			0.0.0.0/8
-			10.0.0.0/8
-			100.64.0.0/10
-			127.0.0.0/8
-			169.254.0.0/16
-			172.16.0.0/12
-			192.0.0.0/24
-			192.0.2.0/24
-			192.88.99.0/24
-			192.168.0.0/16
-			198.18.0.0/15
-			198.51.100.0/24
-			203.0.113.0/24
-			224.0.0.0/4
-			240.0.0.0/4
-			255.255.255.255
-	EOF
-	}
-
-	start_adm() {
-		[ ! -f "/var/log/admflt.lock" ] && {
-			/opt/etc/init.d/S30adm start && touch /var/log/admflt.lock
-		}
-		return $?
-	}	
-	
-	while getopts ":l:cf" arg; do
-		case "$arg" in
-			l)
-				LAN_CONTROL=$OPTARG
-				;;
-			c)
-				ipset -F adm_lan_ac
-				exit 0				
-				;;
-			f)
-				ipset_f && /opt/etc/init.d/S30adm stop
-				rm -rf /var/log/admflt.lock
-				exit 0
-				;;
-		esac
-	done	
-	
-	if [ -z "$LAN_CONTROL" ]; then
-		usage 2
-	fi	
-	
-	ipset_f && ipset_r && fw_rules && start_adm
-	[ "$?" = 0 ] || logger "adm failed!"
-	exit $?
-	;;	
-	
 -g | --global)	
 	case ${2} in
 		start)
@@ -1447,8 +1338,7 @@ uptest= none;
 	echo -e "$ansi_white   [-su/--set_up] Set ShadowSocks and ChinaDNS $ansi_std"
 	echo -e "$ansi_white   [-m/--modules] Loading module $ansi_std"
 	echo -e "$ansi_white   [-S/--START] Running ShadowSocks and ChinaDNS $ansi_std"
-	echo -e "$ansi_white   [-r/--rules] Application Firewall Policy $ansi_std"
-	echo -e "$ansi_white   [-ad/--adm] Ad Filter $ansi_std"	
+	echo -e "$ansi_white   [-r/--rules] Application Firewall Policy $ansi_std"	
 	echo -e "$ansi_white   [-g/--global] Global Proxy $ansi_std"
 	echo -e "$ansi_white   [-f/--flush] Clear firewall policy $ansi_std"
 	echo -e "$ansi_white   [-u/--update] Update chnroutes Routing Host $ansi_std"
