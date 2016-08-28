@@ -101,10 +101,21 @@ case ${1} in
 	else
 		if [ ! -d "$PREFIX/shadowsocks" ]; then
 			echo -e $INFO "Creating in..."
-			cd $PREFIX;mkdir -p opt;mkdir -p shadowsocks;cd /;cd /tmp/home/root
+			entware() {
+				cd $PREFIX;wget -t0 $OPKG_SITE/$ARCH/backup/entware_backup.tar.gz
+				sha1sum_entware="ffc285b0c4ded845c499508b365394ed77b682c1"
+				checksum=`sha1sum $PREFIX/entware_backup.tar.gz | sed "s/  .*//"`
+				if [ ! "$sha1sum_entware" == "$checksum" ]; then
+					echo "$ansi_red entware-ng installation failed $ansi_std"
+					exit 0
+				fi
+				tar -zxvf entware_backup.tar.gz
+				[ -f $PREFIX/entware_backup.tar.gz ] && rm -rf $PREFIX/entware_backup.tar.gz
+			}
+			entware			
+			cd /tmp/home/root
 			cp $SCRIPT_DIR/shadowsocks $PREFIX/shadowsocks
-			mount -o bind $PREFIX/opt /opt
-			cd /opt && wget -O - $OPKG_SITE/$ARCH/installer/entware_install.sh | sh			
+			mount -o bind $PREFIX/opt /opt		
 			if [ -e $SCRIPT_DIR/china* -a -e $SCRIPT_DIR/cron* -a -e $SCRIPT_DIR/dif* -a -e $SCRIPT_DIR/pcap_dns* -a -e $SCRIPT_DIR/pdns* -a -e $SCRIPT_DIR/shadowsocks-libe* -a -e $SCRIPT_DIR/dnscryp* -a -e $SCRIPT_DIR/zone* -a -e $SCRIPT_DIR/dnsma* ]; then
 				cd $SCRIPT_DIR && opkg install --force-checksum china* pdnsd* pcap* shadow* diff* dnscr* dnsma* cron* zonei* bash
 				echo -e "$ansi_green SHADOWSOCKS script installed successfully! $ansi_std"
