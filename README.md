@@ -1,7 +1,7 @@
 #tomato-shadowsocks script
 Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com>
 
-Last edited: 2016.8.28
+Last edited: 2016.9.5
 
 Version: V6.3-stable
 
