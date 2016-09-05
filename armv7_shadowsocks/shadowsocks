@@ -102,10 +102,10 @@ case ${1} in
 		if [ ! -d "$PREFIX/shadowsocks" ]; then
 			echo -e $INFO "Creating in..."
 			entware() {
-				cd $PREFIX;wget -t0 $OPKG_SITE/$ARCH/backup/entware_backup.tar.gz
-				sha1sum_entware="ffc285b0c4ded845c499508b365394ed77b682c1"
-				checksum=`sha1sum $PREFIX/entware_backup.tar.gz | sed "s/  .*//"`
-				if [ ! "$sha1sum_entware" == "$checksum" ]; then
+				cd $PREFIX;wget $OPKG_SITE/$ARCH/backup/entware_backup.tar.gz
+				md5sum_entware="77184e3c3c2645818ccb0404dce8f5ce"
+				checksum=`md5sum $PREFIX/entware_backup.tar.gz | sed "s/  .*//"`
+				if [ ! "$md5sum_entware" == "$checksum" ]; then
 					echo "$ansi_red entware-ng installation failed $ansi_std"
 					exit 0
 				fi
