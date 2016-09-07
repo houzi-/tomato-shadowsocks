@@ -340,7 +340,7 @@ Your Choice:"
 		sed -n 's/.*ver":"\(.*\)".*/\1/p' $CHECK/shadowsocks.json  > $PREFIX/opt/var/log/server.txt
 
 		sed -r 's/#(['$'\t'' ]*\/opt\/etc\/init.d\/S26pdnsd (start))/\1/' $PREFIX/shadowsocks/shadowsocks -i $PREFIX/shadowsocks/shadowsocks
-		sed -i 's/PROCS=ss-watchdog/PROCS=ss-rules/;s/^ARGS=""/ARGS="-G"/' $CHECK/init.d/S99ss-rules		
+		sed -i 's/PROCS=ss-start/PROCS=ss-nat/;s/^ARGS=""/ARGS="-G"/' $CHECK/init.d/S99ss-rules		
 
 		echo -e $INFO Configuring dnsmasq_custom...
 		echo > $dnsmasq
@@ -1329,7 +1329,7 @@ uptest= none;
 *)
 	echo -e "$ansi_green # ------------------------------------------------------------------- $ansi_std"
 	echo -e "$ansi_green # Copyright (C) 2016 Jason Lin <wojiaolinmu008@gmail.com> $ansi_std"
-	echo -e "$ansi_green # Last edited: 2016.9.5 $ansi_std"
+	echo -e "$ansi_green # Last edited: 2016.9.7 $ansi_std"
 	echo -e "$ansi_green # Version: V6.3-stable (ARM version) $ansi_std"
 	echo -e "$ansi_green # Explain: This script can be used only for shibby Tomato ARM firmware. $ansi_std"
 	echo -e "$ansi_green # Description: This is a science on ShadowSocks Internet automatic $ansi_std"
